@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using DotNetty.Transport.Channels;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using Turbo.Core.Networking.Game.Clients;
 using Turbo.Core.Packets.Messages;
 using Turbo.Core.Packets.Revisions;
 using Turbo.Core.Security;
+using Turbo.Networking.Extensions;
 
 namespace Turbo.Networking.Game.Clients;
 
@@ -14,6 +16,7 @@ public class Session : ISession
 {
     private readonly IChannelHandlerContext _channel;
     private readonly ILogger<Session> _logger;
+    private readonly BlockingCollection<IClientPacket> pendingReadMessages = new(15);
 
     public Session(IChannelHandlerContext channel, IRevision initialRevision, ILogger<Session> logger)
     {
@@ -66,6 +69,30 @@ public class Session : ISession
     public void Flush()
     {
         _channel.Flush();
+    }
+    
+    public void OnMessageReceived(IClientPacket messageEvent)
+    {
+        if (!pendingReadMessages.TryAdd(messageEvent))
+        {
+            messageEvent.Content.ReleaseAll();
+        }
+    }
+    
+    public async Task HandleDecodedMessages()
+    {
+        foreach (var msg in pendingReadMessages.GetConsumingEnumerable())
+        {
+            if (Revision.Parsers.TryGetValue(msg.Header, out var parser))
+            {
+                _logger.LogDebug("Received {}:{}", msg.Header, parser.GetType().Name);
+                await parser.HandleAsync(this, msg, _messageHub);
+            }
+            else
+            {
+                _logger.LogDebug("No matching parser found for message {}:{}", msg.Header, msg);
+            }
+        }
     }
 
     protected async Task Send(IComposer composer, bool queue)

@@ -197,7 +197,7 @@ public class TurboEmulator(
 
                 try
                 {
-                    Task.WaitAll(
+                    await Task.WhenAll(
                         Task.Run(async () => await _roomManager.Cycle()),
                         Task.Run(async () => await _sessionManager.Cycle())
                     );
