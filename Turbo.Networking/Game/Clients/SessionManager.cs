@@ -44,7 +44,7 @@ public class SessionManager : ISessionManager
     /// Pings sessions every 30 seconds and disconnects sessions
     /// that have timed out for 60 seconds.
     /// </summary>
-    private async void ProcessPing()
+    private async Task ProcessPing()
     {
         var timeNow = DateTimeOffset.Now.ToUnixTimeSeconds();
 
@@ -73,11 +73,22 @@ public class SessionManager : ISessionManager
     {
         session.LastPongTimestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
     }
-
-    public Task Cycle()
+    
+    private async Task Process()
     {
-        ProcessPing();
+        var tasks = new ConcurrentBag<Task>();
 
-        return Task.CompletedTask;
+        foreach (var session in _clients.Values)
+        {
+            tasks.Add(session.HandleDecodedMessages());
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    public async Task Cycle()
+    {
+        await ProcessPing();
+        await Process();
     }
 }

@@ -5,6 +5,7 @@ using DotNetty.Transport.Channels;
 using Microsoft.Extensions.Logging;
 using Turbo.Core.Game.Players;
 using Turbo.Core.Networking.Game.Clients;
+using Turbo.Core.Packets;
 using Turbo.Core.Packets.Messages;
 using Turbo.Core.Packets.Revisions;
 using Turbo.Core.Security;
@@ -17,11 +18,18 @@ public class Session : ISession
     private readonly IChannelHandlerContext _channel;
     private readonly ILogger<Session> _logger;
     private readonly BlockingCollection<IClientPacket> pendingReadMessages = new(15);
+    private readonly IPacketMessageHub _messageHub;
 
-    public Session(IChannelHandlerContext channel, IRevision initialRevision, ILogger<Session> logger)
+    public Session(
+        IChannelHandlerContext channel,
+        IRevision initialRevision,
+        ILogger<Session> logger,
+        IPacketMessageHub messageHub
+    )
     {
         _channel = channel;
         _logger = logger;
+        _messageHub = messageHub;
 
         Revision = initialRevision;
         LastPongTimestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -70,27 +78,38 @@ public class Session : ISession
     {
         _channel.Flush();
     }
-    
+
     public void OnMessageReceived(IClientPacket messageEvent)
     {
         if (!pendingReadMessages.TryAdd(messageEvent))
         {
             messageEvent.Content.ReleaseAll();
         }
+        else
+        {
+            messageEvent.Content.Retain(); // Retain the buffer
+        }
     }
-    
+
     public async Task HandleDecodedMessages()
     {
         foreach (var msg in pendingReadMessages.GetConsumingEnumerable())
         {
-            if (Revision.Parsers.TryGetValue(msg.Header, out var parser))
+            try
             {
-                _logger.LogDebug("Received {}:{}", msg.Header, parser.GetType().Name);
-                await parser.HandleAsync(this, msg, _messageHub);
+                if (Revision.Parsers.TryGetValue(msg.Header, out var parser))
+                {
+                    _logger.LogDebug("Received {}:{}", msg.Header, parser.GetType().Name);
+                    await parser.HandleAsync(this, msg, _messageHub);
+                }
+                else
+                {
+                    _logger.LogDebug("No matching parser found for message {}:{}", msg.Header, msg);
+                }
             }
-            else
+            finally
             {
-                _logger.LogDebug("No matching parser found for message {}:{}", msg.Header, msg);
+                msg.Content.Release(); // Release the buffer
             }
         }
     }
