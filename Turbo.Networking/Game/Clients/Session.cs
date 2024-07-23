@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using DotNetty.Transport.Channels;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,7 @@ public class Session : ISession
 {
     private readonly IChannelHandlerContext _channel;
     private readonly ILogger<Session> _logger;
-    private readonly BlockingCollection<IClientPacket> pendingReadMessages = new(15);
+    private readonly ConcurrentQueue<IClientPacket> pendingReadMessages = new();
     private readonly IPacketMessageHub _messageHub;
 
     public Session(
@@ -79,37 +80,45 @@ public class Session : ISession
         _channel.Flush();
     }
 
+    private bool TryAddMessage(IClientPacket messageEvent)
+    {
+        pendingReadMessages.Enqueue(messageEvent);
+        messageEvent.Content.Retain();
+        return true;
+    }
+
     public void OnMessageReceived(IClientPacket messageEvent)
     {
-        if (!pendingReadMessages.TryAdd(messageEvent))
+        if (!TryAddMessage(messageEvent))
         {
             messageEvent.Content.ReleaseAll();
-        }
-        else
-        {
-            messageEvent.Content.Retain(); // Retain the buffer
         }
     }
 
     public async Task HandleDecodedMessages()
     {
-        foreach (var msg in pendingReadMessages.GetConsumingEnumerable())
+        while (true)
         {
+            if (pendingReadMessages.IsEmpty)
+            {
+                break;
+            }
+
+            if (!pendingReadMessages.TryDequeue(out var msg)) continue;
             try
             {
                 if (Revision.Parsers.TryGetValue(msg.Header, out var parser))
                 {
-                    _logger.LogDebug("Received {}:{}", msg.Header, parser.GetType().Name);
                     await parser.HandleAsync(this, msg, _messageHub);
                 }
-                else
-                {
-                    _logger.LogDebug("No matching parser found for message {}:{}", msg.Header, msg);
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling message");
             }
             finally
             {
-                msg.Content.Release(); // Release the buffer
+                msg.Content.Release();
             }
         }
     }

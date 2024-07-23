@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DotNetty.Transport.Channels;
 using Turbo.Core.Networking.Game.Clients;
@@ -36,7 +37,7 @@ public class SessionManager : ISessionManager
     public async void DisconnectSession(IChannelId id)
     {
         if (!_clients.TryRemove(id, out var session)) return;
-            
+
         await session.DisposeAsync();
     }
 
@@ -49,7 +50,7 @@ public class SessionManager : ISessionManager
         var timeNow = DateTimeOffset.Now.ToUnixTimeSeconds();
 
         if (timeNow - _lastPingSeconds < _pingIntervalSeconds) return;
-            
+
         var tasks = new ConcurrentBag<Task>();
 
         foreach (var session in _clients.Values)
@@ -65,7 +66,7 @@ public class SessionManager : ISessionManager
         }
 
         await Task.WhenAll(tasks);
-            
+
         _lastPingSeconds = timeNow;
     }
 
@@ -73,22 +74,38 @@ public class SessionManager : ISessionManager
     {
         session.LastPongTimestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
     }
-    
+
     private async Task Process()
     {
         var tasks = new ConcurrentBag<Task>();
-
+        
         foreach (var session in _clients.Values)
         {
-            tasks.Add(session.HandleDecodedMessages());
-        }
+            if (session == null) continue;
 
+            try
+            {
+                tasks.Add(session.HandleDecodedMessages());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating task for session: {ex}");
+            }
+        }
+        
         await Task.WhenAll(tasks);
     }
 
     public async Task Cycle()
     {
-        await ProcessPing();
-        await Process();
+        try
+        {
+            await ProcessPing();
+            await Process();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
     }
 }

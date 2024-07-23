@@ -44,14 +44,21 @@ public class GameMessageHandler : SimpleChannelInboundHandler<IClientPacket>
 
     protected override async void ChannelRead0(IChannelHandlerContext ctx, IClientPacket msg)
     {
-        if (!_sessionManager.TryGetSession(ctx.Channel.Id, out var session)) return;
+        if (!_sessionManager.TryGetSession(ctx.Channel.Id, out var session))
+        {
+            _logger.LogInformation("Session not found for {}", ctx.Channel.RemoteAddress);
+            return;
+        }
+
         if (session.Revision == null)
         {
+            _logger.LogInformation("Session revision not set for {}", ctx.Channel.RemoteAddress);
+
             await session.DisposeAsync();
 
             return;
         }
-            
+
         session.OnMessageReceived(msg);
     }
 
