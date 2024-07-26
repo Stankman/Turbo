@@ -10,7 +10,6 @@ namespace Turbo.Main.PacketHandlers;
 
 public class TrackingHandler : ITrackingHandler
 {
-    
     private readonly ILogger<AuthenticationMessageHandler> _logger;
     private readonly IPacketMessageHub _messageHub;
     
@@ -29,7 +28,6 @@ public class TrackingHandler : ITrackingHandler
     
     private async void OnLatencyPingReport(LatencyPingReportMessage message, ISession session)
     {
-
         int averageLatency = message.AverageLatency;
         int validPingAverage = message.ValidPingAverage;
         int numPings = message.NumPings;
