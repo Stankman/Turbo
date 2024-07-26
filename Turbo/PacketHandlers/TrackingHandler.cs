@@ -22,6 +22,8 @@ public class TrackingHandler : ITrackingHandler
         
         _messageHub.Subscribe<LatencyPingReportMessage>(this, OnLatencyPingReport);
         _messageHub.Subscribe<LatencyPingRequestMessage>(this, OnLatencyPingRequest);
+        _messageHub.Subscribe<PerformanceLogMessage>(this, OnPerformanceTracker);
+        _messageHub.Subscribe<LagWarningReportMessage>(this, OnLagWarningReport);
     }
     
     
@@ -42,5 +44,15 @@ public class TrackingHandler : ITrackingHandler
         {
             ID = message.ID
         });
+    }
+    
+    public async void OnPerformanceTracker(PerformanceLogMessage message, ISession session)
+    {
+        _logger.LogInformation("Performance Tracker: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} from {10}", message.ElapsedTime, message.UserAgent, message.FlashVersion, message.OS, message.Browser, message.IsDebugger, message.MemoryUsage, message.unknownField, message.GarbageCollections, message.AverageFrameRate, session.IPAddress);
+    }
+    
+    public async void OnLagWarningReport(LagWarningReportMessage message, ISession session)
+    {
+        _logger.LogInformation("Lag Warning Report: {0} from {1}", message.WarningCount, session.IPAddress);
     }
 }
