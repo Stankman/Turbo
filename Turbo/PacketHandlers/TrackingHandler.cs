@@ -28,11 +28,7 @@ public class TrackingHandler : ITrackingHandler
     
     private async void OnLatencyPingReport(LatencyPingReportMessage message, ISession session)
     {
-        int averageLatency = message.AverageLatency;
-        int validPingAverage = message.ValidPingAverage;
-        int numPings = message.NumPings;
-        
-        _logger.LogInformation("Latency Ping Report: {0} {1} {2} from {3}", averageLatency, validPingAverage, numPings, session.IPAddress);
+        _logger.LogInformation("Latency Ping Report: {0} {1} {2} from {3}", message.AverageLatency, message.ValidPingAverage, message.NumPings, session.IPAddress);
     }
     
     private async void OnLatencyPingRequest(LatencyPingRequestMessage message, ISession session)
