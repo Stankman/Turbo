@@ -26,7 +26,6 @@ public class TrackingHandler : ITrackingHandler
         _messageHub.Subscribe<LagWarningReportMessage>(this, OnLagWarningReport);
     }
     
-    
     private async void OnLatencyPingReport(LatencyPingReportMessage message, ISession session)
     {
         int averageLatency = message.AverageLatency;
