@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Turbo.Core.Events;
 using Turbo.Core.Networking.Game.Clients;
 using Turbo.Core.PacketHandlers;
 using Turbo.Core.Packets;
