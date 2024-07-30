@@ -23,6 +23,7 @@ using Turbo.Database.Repositories.Navigator;
 using Turbo.Database.Repositories.Player;
 using Turbo.Database.Repositories.Room;
 using Turbo.Database.Repositories.Security;
+using Turbo.Database.Repositories.Tracking;
 using Turbo.EventHandlers;
 using Turbo.Events;
 using Turbo.Furniture;
@@ -150,5 +151,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INavigatorRepository, NavigatorRepository>();
         services.AddScoped<IPlayerChatStyleRepository, PlayerChatStyleRepository>();
         services.AddScoped<IPlayerChatStyleOwnedRepository, PlayerChatStyleOwnedRepository>();
+        services.AddScoped<IPerformanceLogRepository, PerformanceLogRepository>();
     }
 }
