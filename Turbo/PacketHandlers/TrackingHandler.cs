@@ -1,7 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Turbo.Core.Networking.Game.Clients;
 using Turbo.Core.PacketHandlers;
 using Turbo.Core.Packets;
+using Turbo.Database.Entities.Tracking;
+using Turbo.Database.Repositories.Tracking;
 using Turbo.Packets.Incoming.Tracking;
 using Turbo.Packets.Outgoing.Tracking;
 
@@ -11,14 +15,17 @@ public class TrackingHandler : ITrackingHandler
 {
     private readonly ILogger<AuthenticationMessageHandler> _logger;
     private readonly IPacketMessageHub _messageHub;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     
     public TrackingHandler(
         IPacketMessageHub messageHub,
-        ILogger<AuthenticationMessageHandler> logger
+        ILogger<AuthenticationMessageHandler> logger,
+        IServiceScopeFactory serviceScopeFactory
     )
     {
         _messageHub = messageHub;
         _logger = logger;
+        _serviceScopeFactory = serviceScopeFactory;
         
         _messageHub.Subscribe<LatencyPingReportMessage>(this, OnLatencyPingReport);
         _messageHub.Subscribe<LatencyPingRequestMessage>(this, OnLatencyPingRequest);
@@ -41,9 +48,25 @@ public class TrackingHandler : ITrackingHandler
         });
     }
     
-    public async void OnPerformanceTracker(PerformanceLogMessage message, ISession session)
+    private async Task OnPerformanceTracker(PerformanceLogMessage message, ISession session)
     {
-        _logger.LogInformation("Performance Tracker: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} from {10}", message.ElapsedTime, message.UserAgent, message.FlashVersion, message.OS, message.Browser, message.IsDebugger, message.MemoryUsage, message.unknownField, message.GarbageCollections, message.AverageFrameRate, session.IPAddress);
+        using var scope = _serviceScopeFactory.CreateScope();
+        var performanceLogRepository = scope.ServiceProvider.GetRequiredService<IPerformanceLogRepository>();
+
+        var performanceLog = new PerformanceLogEntity
+        {
+            ElapsedTime = message.ElapsedTime,
+            UserAgent = message.UserAgent,
+            FlashVersion = message.FlashVersion,
+            OS = message.OS,
+            Browser = message.Browser,
+            IsDebugger = message.IsDebugger,
+            MemoryUsage = message.MemoryUsage,
+            GarbageCollections = message.GarbageCollections,
+            AverageFrameRate = message.AverageFrameRate
+        };
+
+        await performanceLogRepository.AddAsync(performanceLog);
     }
     
     public async void OnLagWarningReport(LagWarningReportMessage message, ISession session)
