@@ -98,6 +98,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IRoomSettingsMessageHandler, RoomSettingsMessageHandler>();
         services.AddTransient<IUserMessageHandler, UserMessageHandler>();
         services.AddTransient<ITrackingHandler, TrackingHandler>();
+        services.AddTransient<IAdvertisingHandler, AdvertisingHandler>()
     }
 
     public static void AddManagers(this IServiceCollection services)

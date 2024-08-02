@@ -17,6 +17,7 @@ public class PacketHandlerManager : IPacketHandlerManager
     private readonly IRoomSettingsMessageHandler _roomSettingsMessageHandler;
     private readonly IUserMessageHandler _userMessageHandler;
     private readonly ITrackingHandler _trackingHandler;
+    private readonly IAdvertisingHandler _advertisingHandler;
 
     public PacketHandlerManager(
         IAuthenticationMessageHandler authenticationMessageHandler,
@@ -31,8 +32,8 @@ public class PacketHandlerManager : IPacketHandlerManager
         IRoomSessionMessageHandler roomSessionMessageHandler,
         IRoomSettingsMessageHandler roomSettingsMessageHandler,
         IUserMessageHandler userMessageHandler,
-        ITrackingHandler trackingHandler
-        )
+        ITrackingHandler trackingHandler,
+        IAdvertisingHandler advertisingHandler
     {
         _authenticationMessageHandler = authenticationMessageHandler;
         _competitionMessageHandler = competitionMessageHandler;
@@ -47,5 +48,6 @@ public class PacketHandlerManager : IPacketHandlerManager
         _roomSettingsMessageHandler = roomSettingsMessageHandler;
         _userMessageHandler = userMessageHandler;
         _trackingHandler = trackingHandler;
+        _advertisingHandler = advertisingHandler;
     }
 }
