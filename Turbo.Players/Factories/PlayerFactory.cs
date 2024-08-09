@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Turbo.Core.Game.Players;
-using Turbo.Database.Entities.Players;
+using Turbo.Core.Database.Entities.Players;
 using Turbo.Inventory.Factories;
 
 namespace Turbo.Players.Factories;

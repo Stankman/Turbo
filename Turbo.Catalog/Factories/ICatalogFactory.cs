@@ -1,5 +1,5 @@
 using Turbo.Core.Game.Catalog;
-using Turbo.Database.Entities.Catalog;
+using Turbo.Core.Database.Entities.Catalog;
 
 namespace Turbo.Catalog.Factories;
 

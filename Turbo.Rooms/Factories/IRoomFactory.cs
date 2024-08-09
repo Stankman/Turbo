@@ -1,5 +1,5 @@
 ﻿using Turbo.Core.Game.Rooms;
-using Turbo.Database.Entities.Room;
+using Turbo.Core.Database.Entities.Room;
 
 namespace Turbo.Rooms.Factories;
 
