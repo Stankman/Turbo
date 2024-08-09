@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
+using Turbo.Core.Database.Entities.Furniture;
 using Turbo.Core.Game.Furniture;
 using Turbo.Core.Game.Inventory;
-using Turbo.Core.Database.Entities.Furniture;
 
-namespace Turbo.Furniture.Factories;
+namespace Turbo.Core.Database.Factories.Players;
 
 public interface IPlayerFurnitureFactory
 {

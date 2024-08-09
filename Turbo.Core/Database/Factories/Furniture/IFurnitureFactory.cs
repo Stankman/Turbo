@@ -1,10 +1,10 @@
-﻿using Turbo.Core.Game.Furniture;
+﻿using Turbo.Core.Database.Entities.Furniture;
+using Turbo.Core.Game.Furniture;
 using Turbo.Core.Game.Furniture.Definition;
 using Turbo.Core.Game.Inventory;
 using Turbo.Core.Game.Rooms.Managers;
-using Turbo.Core.Database.Entities.Furniture;
 
-namespace Turbo.Furniture.Factories;
+namespace Turbo.Core.Database.Factories.Furniture;
 
 public interface IFurnitureFactory
 {

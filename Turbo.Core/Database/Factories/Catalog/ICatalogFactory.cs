@@ -1,7 +1,7 @@
-using Turbo.Core.Game.Catalog;
 using Turbo.Core.Database.Entities.Catalog;
+using Turbo.Core.Game.Catalog;
 
-namespace Turbo.Catalog.Factories;
+namespace Turbo.Core.Database.Factories.Catalog;
 
 public interface ICatalogFactory
 {

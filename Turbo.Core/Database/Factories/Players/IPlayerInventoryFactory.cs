@@ -1,7 +1,7 @@
 ﻿using Turbo.Core.Game.Inventory;
 using Turbo.Core.Game.Players;
 
-namespace Turbo.Inventory.Factories;
+namespace Turbo.Core.Database.Factories.Players;
 
 public interface IPlayerInventoryFactory
 {
