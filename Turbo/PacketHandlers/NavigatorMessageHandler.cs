@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.Logging;
 using Turbo.Core.Game.Navigator;
 using Turbo.Core.Game.Navigator.Constants;
@@ -55,8 +56,28 @@ public class NavigatorMessageHandler(
 
         string searchCode = message.SearchCodeOriginal?.ToLower() ?? string.Empty;
         string searchTerm = message.FilteringData ?? string.Empty;
+        string filterMode = "anything";
 
-        await navigatorManager.HandleNavigatorSearch(session.Player, searchCode, searchTerm);
+        if(!String.IsNullOrEmpty(searchTerm) && searchTerm.Contains(':'))
+        {
+            var parts = searchTerm.Split(new[] { ':' }, 2);
+
+            filterMode = parts[0].Trim() switch
+            {
+                "tag" => "tag",
+                "owner" => "owner",
+                "roomname" => "roomname",
+                "group" => "group",
+                _ => "anything"
+            };
+
+            if (!filterMode.Equals("anything"))
+            {
+                searchTerm = parts[1].Trim();
+            }
+        }
+
+        await navigatorManager.HandleNavigatorSearch(session.Player, searchCode, searchTerm, filterMode);
     }
     
     private int ParseSearchType(string searchCode)

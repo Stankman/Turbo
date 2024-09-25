@@ -13,6 +13,7 @@ using Turbo.Core.Game.Rooms.Constants;
 using Turbo.Core.Game.Rooms.Utils;
 using Turbo.Core.Utilities;
 using Turbo.Database.Repositories.Navigator;
+using Turbo.Database.Repositories.Room;
 using Turbo.Packets.Outgoing.Handshake;
 using Turbo.Packets.Outgoing.Navigator;
 using Turbo.Packets.Outgoing.Room.Engine;
@@ -208,6 +209,16 @@ public class NavigatorManager(
         ClearPendingDoorbell(player);
 
         SetPendingRoomId(player.Id, roomId, true);
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var roomEnterLogRepository = scope.ServiceProvider.GetRequiredService<IRoomEntryLogRepository>();
+
+        await roomEnterLogRepository.AddRoomEntryLogAsync(roomId, player.Id);
+
+        await player.Session.Send(new FlatAccessibleMessage
+        {
+            Username = player.Name
+        });
 
         if (location != null) _pendingRoomIds[player.Id].Location = new Point(location);
 
@@ -433,9 +444,9 @@ public class NavigatorManager(
         _logger.LogInformation("Loaded {0} navigator event categories", _eventCategories.Count);
     }
     
-    public async Task HandleNavigatorSearch(IPlayer player, string searchCode, string searchParam)
+    public async Task HandleNavigatorSearch(IPlayer player, string searchCode, string searchParam, string filterMode)
     {
-        _logger.LogInformation("HandleNavigatorSearch called with searchCode: {searchCode}, searchParam: {searchParam}", searchCode, searchParam);
+        _logger.LogInformation("HandleNavigatorSearch called with searchCode: {searchCode}, searchParam: {searchParam}, filterMode: {filterMode}", searchCode, searchParam, filterMode);
 
         switch (searchCode)
         {
@@ -446,7 +457,7 @@ public class NavigatorManager(
                 await SendHotelView(player);
                 break;
             case "myworld_view":
-                await SendMyWorldView(player);
+                await SendMyWorldView(player, searchParam, filterMode);
                 break;
             case "category":
                 await SendCategoryRooms(player, searchParam);
@@ -572,21 +583,29 @@ public class NavigatorManager(
         await player.Session.Send(message);
     }
     
-    public async Task SendMyWorldView(IPlayer player)
+    public async Task SendMyWorldView(IPlayer player, string? searchParam = null, string? filterMode = "anything")
     {
         _logger.LogInformation("Sending My World view to player {playerId}", player.Id);
 
         // Fetch data concurrently
-        var myRoomsTask = _roomManager.GetRoomsByOwnerAsync(player.Id);
+        var myRoomsTask = _roomManager.GetRoomsByOwnerAsync(player.Id, searchParam, filterMode);
         //var favoriteRoomsTask = _roomManager.GetFavoriteRoomsAsync(player.Id);
+        //var groupsRoomsTask = _roomManager.GetGroupsRoomsAsync(player.Id);
         //var rightsRoomsTask = _roomManager.GetRoomsWithRightsAsync(player.Id);
+        var roomsHistoryTask = _roomManager.GetRoomsHistoryAsync(player.Id, searchParam, filterMode);
+        //var friendsRoomsTask = _roomManager.GetFriendsRoomsAsync(player.Id);
+        //var frequentRoomsTask = _roomManager.GetFrequentRoomsAsync(player.Id);
 
-        await Task.WhenAll(myRoomsTask);
+        await Task.WhenAll(myRoomsTask, roomsHistoryTask);
 
         // Retrieve results
         var myRooms = myRoomsTask.Result;
         //var favoriteRooms = favoriteRoomsTask.Result;
+        //var groupsRooms = groupsRoomsTask.Result;
         //var rightsRooms = rightsRoomsTask.Result;
+        var roomsHistory = roomsHistoryTask.Result;
+        //var friendsRooms = friendsRoomsTask.Result;
+        //var frequentRooms = frequentRoomsTask.Result;
 
         // Prepare search result blocks
         var results = new List<ISearchResultData>();
@@ -595,10 +614,22 @@ public class NavigatorManager(
             results.Add(CreateSearchResultData("my_rooms", "My Rooms", myRooms));
 
         //if (favoriteRooms.Any())
-            //results.Add(CreateSearchResultData("favorites", "My Favourite Rooms", favoriteRooms));
+        //results.Add(CreateSearchResultData("favorites", "My Favourite Rooms", favoriteRooms));
+
+        //if (groupsRooms.Any())
+        //results.Add(CreateSearchResultData("my_groups", "My Groups", groupsRooms));        
 
         //if (rightsRooms.Any())
-            //results.Add(CreateSearchResultData("with_rights", "Rooms where I have rights", rightsRooms));
+        //results.Add(CreateSearchResultData("with_rights", "Rooms where I have rights", rightsRooms));
+
+        if (roomsHistory.Any())
+            results.Add(CreateSearchResultData("history", "My Room Visit History", roomsHistory));
+
+        //if (friendsRooms.Any())
+        //results.Add(CreateSearchResultData("friends_rooms", "My Friends' Rooms", friendsRooms));
+
+        //if (frequentRooms.Any())
+        //results.Add(CreateSearchResultData("history_freq", "Frequently Visited Rooms", frequentRooms));
 
         var message = new NavigatorSearchResultBlocksMessage
         {
@@ -686,5 +717,25 @@ public class NavigatorManager(
         };
 
         await player.Session.Send(message);
+    }
+
+    private (string key, string value) ParseSearchParam(string searchParam)
+    {
+        if (string.IsNullOrEmpty(searchParam))
+        {
+            _logger.LogError("Error parsing navigator searchParam: null value");
+        }
+
+        var parts = searchParam.Split(new[] { ':' }, 2);
+
+        if (parts.Length < 2)
+        {
+            _logger.LogError("Error parsing navigator searchParam: wrong length");
+        }
+
+        string key = parts[0].Trim();
+        string value = parts[1].Trim();
+
+        return (key.ToLower(), value);
     }
 }

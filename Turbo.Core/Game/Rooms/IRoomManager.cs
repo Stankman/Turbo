@@ -13,8 +13,9 @@ public interface IRoomManager : IComponent, ICyclable
     public Task RemoveRoom(int id);
     public Task<IRoomModel> GetModel(int id);
     public IRoomModel GetModelByName(string name);
-    public Task<List<IRoom>> GetRoomsByOwnerAsync(int ownerId);
+    public Task<List<IRoom>> GetRoomsByOwnerAsync(int ownerId, string? searchParam, string filterMode);
     public Task<List<IRoom>> SearchRooms(string searchTerm);
     public Task<List<IRoom>> GetRoomsByCategoriesAsync(IEnumerable<int> categoryIds);
     public Task<List<IRoom>> GetRoomsOrderedByPopularityAsync();
+    public Task<List<IRoom>> GetRoomsHistoryAsync(int playerId, string? searchParam, string filterMode);
 }
