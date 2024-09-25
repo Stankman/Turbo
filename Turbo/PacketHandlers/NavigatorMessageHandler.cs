@@ -17,10 +17,18 @@ public class NavigatorMessageHandler(
 {
     public void Register()
     {
+        messageHub.Subscribe<CreateFlatMessage>(this, OnCreateFlatMessage);
         messageHub.Subscribe<GetUserFlatCatsMessage>(this, OnGetUserFlatCatsMessage);
         messageHub.Subscribe<GetGuestRoomMessage>(this, OnGetGuestRoomMessage);
         messageHub.Subscribe<NewNavigatorInitMessage>(this, OnNewNavigatorInitMessage);
         messageHub.Subscribe<NewNavigatorSearchMessage>(this, OnNewNavigatorSearchMessage);
+    }
+
+    protected virtual async void OnCreateFlatMessage(CreateFlatMessage message, ISession session)
+    {
+        if (session.Player == null) return;
+
+        await navigatorManager.CreateFlat(session.Player, message.FlatName, message.FlatDescription, message.FlatModelName, message.MaxPlayers, message.CategoryID, message.TradeSetting);
     }
 
     protected virtual async void OnGetUserFlatCatsMessage(GetUserFlatCatsMessage message, ISession session)

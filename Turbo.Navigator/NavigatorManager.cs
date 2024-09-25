@@ -39,6 +39,30 @@ public class NavigatorManager(
     private readonly ConcurrentDictionary<int, IPendingRoomInfo> _pendingRoomIds = new();
     private readonly IList<INavigatorTopLevelContext> _tabs = new List<INavigatorTopLevelContext>();
 
+    public async Task CreateFlat(IPlayer player, string name, string description, string modelName, int maxUsers, int categoryId, RoomTradeType tradeType)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var navigatorRepository = scope.ServiceProvider.GetRequiredService<INavigatorRepository>();
+
+        // TODO: Check if the player has already exceeded the room creation limit.
+        // Note: Subscription levels may affect or alter this limit.
+
+        var flatCategoryEntity = await navigatorRepository.FlatCategoryEntityByIdAsync(categoryId);
+
+        if(flatCategoryEntity == null)
+        {
+            _logger.LogError("Unidentified flat category entity with ID '{categoryId}'", categoryId);
+        }
+
+        var room = await _roomManager.CreateRoom(player, name, description, modelName, maxUsers, categoryId, tradeType);
+
+        await player.Session.Send(new FlatCreatedMessage
+        {
+            RoomId = room.Id,
+            RoomName = room.RoomDetails.Name
+        });
+    }
+
     public int GetPendingRoomId(int userId)
     {
         if (_pendingRoomIds.TryGetValue(userId, out var pendingRoomInfo)) return pendingRoomInfo.RoomId;
@@ -215,14 +239,20 @@ public class NavigatorManager(
 
         await roomEnterLogRepository.AddRoomEntryLogAsync(roomId, player.Id);
 
+        //Is this not send when creating a room?
         await player.Session.Send(new FlatAccessibleMessage
         {
+            RoomId = roomId,
             Username = player.Name
         });
 
         if (location != null) _pendingRoomIds[player.Id].Location = new Point(location);
 
-        await player.Session.Send(new OpenConnectionMessage());
+        await player.Session.Send(new OpenConnectionMessage
+        {
+            RoomId = roomId
+        });
+
         await player.Session.Send(new RoomReadyMessage
         {
             RoomId = room.Id,

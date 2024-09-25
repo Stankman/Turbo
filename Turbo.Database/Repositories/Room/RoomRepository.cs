@@ -5,11 +5,31 @@ using Microsoft.EntityFrameworkCore;
 using Turbo.Database.Context;
 using Turbo.Core.Database.Entities.Room;
 using Turbo.Core.Game.Rooms.Constants;
+using Turbo.Core.Game.Navigator.Constants;
 
 namespace Turbo.Database.Repositories.Room;
 
 public class RoomRepository(IEmulatorContext context) : IRoomRepository
 {
+    public async Task<RoomEntity> CreateRoom(int ownerId, string name, string description, int modelId, int maxUsers, int categoryId, RoomTradeType tradeSetting)
+    {
+        var entity = new RoomEntity
+        {
+            Name = name,
+            Description = description,
+            PlayerEntityId = ownerId,
+            UsersMax = maxUsers,
+            NavigatorCategoryEntityId = categoryId,
+            RoomModelEntityId = modelId,
+            TradeType = tradeSetting
+        };
+
+        context.Add(entity);
+
+        await context.SaveChangesAsync();
+
+        return entity;
+    }
     public async Task<RoomEntity> FindAsync(int id)
     {
         return await context.Rooms

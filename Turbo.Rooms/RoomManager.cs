@@ -9,7 +9,9 @@ using Microsoft.Extensions.Logging;
 using Turbo.Core.Database.Entities.Room;
 using Turbo.Core.Database.Factories.Rooms;
 using Turbo.Core.Game;
+using Turbo.Core.Game.Players;
 using Turbo.Core.Game.Rooms;
+using Turbo.Core.Game.Rooms.Constants;
 using Turbo.Core.Game.Rooms.Mapping;
 using Turbo.Core.Utilities;
 using Turbo.Database.Repositories.Player;
@@ -29,6 +31,37 @@ public class RoomManager(
     private readonly ConcurrentDictionary<int, IRoom> _rooms = new();
 
     private int _remainingTryDisposeTicks = DefaultSettings.RoomTryDisposeTicks;
+
+    public async Task<IRoom> CreateRoom(IPlayer player, string name, string description, string modelName, int userMax, int catId, RoomTradeType tradeType)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var roomRepository = scope.ServiceProvider.GetService<IRoomRepository>();
+        var roomModelRepository = scope.ServiceProvider.GetService<IRoomModelRepository>();
+        var playerRepository = scope.ServiceProvider.GetService<IPlayerRepository>();
+
+        var roomModel = await roomModelRepository.FindByNameAsync(modelName);
+
+        if(roomModel == null)
+        {
+            _logger.LogError("Unidentified Room model with name '{modelName}'.", modelName);
+        }
+
+        var roomEntity = await roomRepository.CreateRoom(player.Id, name, description, roomModel.Id, userMax, catId, tradeType);
+
+        if (roomEntity == null) return null;
+
+        var room = await GetRoom(roomEntity.Id);
+
+        if (room != null)
+        {
+            if (string.IsNullOrEmpty(room.RoomDetails.PlayerName))
+            {
+                room.RoomDetails.PlayerName = player.Name;
+            }
+        }
+
+        return room;
+    }
 
     public async Task<IRoom> GetRoom(int id)
     {

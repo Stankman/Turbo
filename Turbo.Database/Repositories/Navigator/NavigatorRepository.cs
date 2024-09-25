@@ -4,11 +4,18 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Turbo.Database.Context;
 using Turbo.Core.Database.Entities.Navigator;
+using System.Xml.Linq;
 
 namespace Turbo.Database.Repositories.Navigator;
 
 public class NavigatorRepository(IEmulatorContext _context) : INavigatorRepository
 {
+    public async Task<NavigatorFlatCategoryEntity> FlatCategoryEntityByIdAsync(int categoryId)
+    {
+        return await _context.NavigatorFlatCategories
+            .FirstOrDefaultAsync(entity => entity.Id == categoryId);
+    }
+
     public async Task<List<NavigatorFlatCategoryEntity>> GetFlatCategoriesAsync()
     {
         return await _context.NavigatorFlatCategories

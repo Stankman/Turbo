@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Turbo.Core.Game.Navigator.Constants;
 using Turbo.Core.Game.Players;
 using Turbo.Core.Game.Rooms;
+using Turbo.Core.Game.Rooms.Constants;
 using Turbo.Core.Game.Rooms.Utils;
 using Turbo.Core.Utilities;
 
@@ -9,6 +11,7 @@ namespace Turbo.Core.Game.Navigator;
 
 public interface INavigatorManager : IComponent
 {
+    public Task CreateFlat(IPlayer player, string name, string description, string modelName, int maxUsers, int categoryId, RoomTradeType tradeType);
     public int GetPendingRoomId(int userId);
     public void SetPendingRoomId(int userId, int roomId, bool approved = false);
     public void ClearPendingRoomId(int userId);
