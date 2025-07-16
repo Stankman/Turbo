@@ -8,6 +8,7 @@ using Turbo.Core.Database.Attributes;
 using Turbo.Core.Database.Entities;
 using Turbo.Core.Database.Entities.Catalog;
 using Turbo.Core.Database.Entities.Furniture;
+using Turbo.Core.Database.Entities.Messenger;
 using Turbo.Core.Database.Entities.Navigator;
 using Turbo.Core.Database.Entities.Players;
 using Turbo.Core.Database.Entities.Room;
@@ -27,6 +28,7 @@ public class TurboContext(DbContextOptions<TurboContext> options) : DbContext(op
     public DbSet<FurnitureTeleportLinkEntity> FurnitureTeleportLinks { get; set; }
     public DbSet<PlayerBadgeEntity> PlayerBadges { get; set; }
     public DbSet<PlayerCurrencyEntity> PlayerCurrencies { get; set; }
+    public DbSet<PlayerPreferencesEntity> PlayerPreferences { get; set; }
     public DbSet<PlayerEntity> Players { get; set; }
     public DbSet<RoomBanEntity> RoomBans { get; set; }
     public DbSet<RoomEntity> Rooms { get; set; }
@@ -44,6 +46,8 @@ public class TurboContext(DbContextOptions<TurboContext> options) : DbContext(op
     public DbSet<PerformanceLogEntity> PerformanceLogs { get; set; }
     public DbSet<PlayerPerksEntity> PlayerPerks { get; set; }
     public DbSet<PlayerFavouriteRoomsEntity> PlayerFavouriteRooms { get; set; }
+    public DbSet<MessengerRequestEntity> MessengerRequests { get; set; }
+    public DbSet<MessengerFriendEntity> MessengerFriends { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -79,15 +83,21 @@ public class TurboContext(DbContextOptions<TurboContext> options) : DbContext(op
 
         foreach (var plugin in plugins)
         {
-            // Load assembly
-            var assembly = Assembly.LoadFile(Path.Combine(Directory.GetCurrentDirectory(), plugin));
+            try
+            {
+                var assembly = Assembly.LoadFile(Path.Combine(Directory.GetCurrentDirectory(), plugin));
+                var entityTypes = assembly.GetTypes()
+                    .Where(t => t.GetCustomAttributes(typeof(TurboEntity), true).Any());
 
-            var entityTypes = assembly.GetTypes()
-                .Where(t => t.GetCustomAttributes(typeof(TurboEntity), true).Any());
-
-            foreach (var type in entityTypes)
-                entityMethod.MakeGenericMethod(type)
-                    .Invoke(modelBuilder, new object[] { });
+                foreach (var type in entityTypes)
+                    entityMethod.MakeGenericMethod(type)
+                        .Invoke(modelBuilder, new object[] { });
+            }
+            catch (Exception ex)
+            {
+                // Log or handle the error as needed
+                Console.WriteLine($"Failed to load plugin '{plugin}': ({ex}) -> {ex.Message}");
+            }
         }
     }
 

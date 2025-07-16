@@ -6,15 +6,16 @@ using Turbo.Core.Database.Entities.Players;
 namespace Turbo.Core.Database.Entities.Messenger;
 
 [Table("messenger_requests")]
-[Index(nameof(PlayerEntityId), nameof(RequestedPlayerEntityId), IsUnique = true)]
+[Index(nameof(PlayerId), nameof(RequestedPlayerId), IsUnique = true)]
 public class MessengerRequestEntity : Entity
 {
-    [Column("player_id")][Required] public int PlayerEntityId { get; set; }
+    [Column("player_id")][Required] public int PlayerId { get; set; }
 
-    [Column("requested_id")][Required] public int RequestedPlayerEntityId { get; set; }
+    [Column("requested_id")][Required] public int RequestedPlayerId { get; set; }
 
-    [ForeignKey(nameof(PlayerEntityId))] public PlayerEntity PlayerEntity { get; set; }
+    [ForeignKey(nameof(PlayerId))] 
+    public PlayerEntity PlayerEntity { get; set; }
 
-    [ForeignKey(nameof(RequestedPlayerEntityId))]
+    [ForeignKey(nameof(RequestedPlayerId))]
     public PlayerEntity RequestedPlayerEntity { get; set; }
 }

@@ -5,5 +5,5 @@ namespace Turbo.Core.Database.Factories.Players;
 
 public interface IPlayerFactory
 {
-    public IPlayer Create(PlayerEntity playerEntity);
+    public IPlayer Create(PlayerEntity playerEntity, PlayerPreferencesEntity playerPreferencesEntity);
 }

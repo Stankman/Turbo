@@ -8,12 +8,12 @@ using Turbo.Core.Game.Messenger.Constants;
 namespace Turbo.Core.Database.Entities.Messenger;
 
 [Table("messenger_friends")]
-[Index(nameof(PlayerEntityId), nameof(FriendPlayerEntityId), IsUnique = true)]
+[Index(nameof(PlayerId), nameof(FriendPlayerId), IsUnique = true)]
 public class MessengerFriendEntity : Entity
 {
-    [Column("player_id")][Required] public int PlayerEntityId { get; set; }
+    [Column("player_id")][Required] public int PlayerId { get; set; }
 
-    [Column("requested_id")][Required] public int FriendPlayerEntityId { get; set; }
+    [Column("requested_id")][Required] public int FriendPlayerId { get; set; }
 
     [Column("category_id")] public int? MessengerCategoryEntityId { get; set; }
 
@@ -22,9 +22,10 @@ public class MessengerFriendEntity : Entity
     [DefaultValueSql(MessengerFriendRelationEnum.Zero)]
     public MessengerFriendRelationEnum RelationType { get; set; }
 
-    [ForeignKey(nameof(PlayerEntityId))] public PlayerEntity PlayerEntity { get; set; }
+    [ForeignKey(nameof(PlayerId))] public PlayerEntity 
+    PlayerEntity { get; set; }
 
-    [ForeignKey(nameof(FriendPlayerEntityId))]
+    [ForeignKey(nameof(FriendPlayerId))]
     public PlayerEntity FriendPlayerEntity { get; set; }
 
     [ForeignKey(nameof(MessengerCategoryEntityId))]

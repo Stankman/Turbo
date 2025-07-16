@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Turbo.Core.Database.Entities.Catalog;
 using Turbo.Core.Database.Entities.Furniture;
+using Turbo.Core.Database.Entities.Messenger;
 using Turbo.Core.Database.Entities.Navigator;
 using Turbo.Core.Database.Entities.Players;
 using Turbo.Core.Database.Entities.Room;
@@ -24,6 +25,7 @@ public interface IEmulatorContext : IDisposable
     public DbSet<FurnitureTeleportLinkEntity> FurnitureTeleportLinks { get; set; }
     public DbSet<PlayerBadgeEntity> PlayerBadges { get; set; }
     public DbSet<PlayerCurrencyEntity> PlayerCurrencies { get; set; }
+    public DbSet<PlayerPreferencesEntity> PlayerPreferences { get; set; }
     public DbSet<PlayerEntity> Players { get; set; }
     public DbSet<RoomBanEntity> RoomBans { get; set; }
     public DbSet<RoomChatlogEntity> Chatlogs { get; set; }
@@ -41,6 +43,8 @@ public interface IEmulatorContext : IDisposable
     public DbSet<PerformanceLogEntity> PerformanceLogs { get; set; }
     public DbSet<PlayerPerksEntity> PlayerPerks { get; set; }
     public DbSet<PlayerFavouriteRoomsEntity> PlayerFavouriteRooms { get; set; }
+    public DbSet<MessengerRequestEntity> MessengerRequests { get; set; }
+    public DbSet<MessengerFriendEntity> MessengerFriends { get; set; }
 
     public int SaveChanges(bool acceptAllChangesOnSuccess);
     public int SaveChanges();

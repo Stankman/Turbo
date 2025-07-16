@@ -5,12 +5,14 @@ using Turbo.Catalog.Factories;
 using Turbo.Core.Configuration;
 using Turbo.Core.Database.Factories.Catalog;
 using Turbo.Core.Database.Factories.Furniture;
+using Turbo.Core.Database.Factories.Messenger;
 using Turbo.Core.Database.Factories.Players;
 using Turbo.Core.Database.Factories.Rooms;
 using Turbo.Core.EventHandlers;
 using Turbo.Core.Events;
 using Turbo.Core.Game.Catalog;
 using Turbo.Core.Game.Furniture;
+using Turbo.Core.Game.Messenger;
 using Turbo.Core.Game.Navigator;
 using Turbo.Core.Game.Players;
 using Turbo.Core.Game.Rooms;
@@ -25,6 +27,7 @@ using Turbo.Database.Queue;
 using Turbo.Database.Repositories.Catalog;
 using Turbo.Database.Repositories.ChatStyles;
 using Turbo.Database.Repositories.Furniture;
+using Turbo.Database.Repositories.Messenger;
 using Turbo.Database.Repositories.Navigator;
 using Turbo.Database.Repositories.Player;
 using Turbo.Database.Repositories.Room;
@@ -36,6 +39,8 @@ using Turbo.Furniture;
 using Turbo.Furniture.Factories;
 using Turbo.Inventory.Factories;
 using Turbo.Main.PacketHandlers;
+using Turbo.Messenger;
+using Turbo.Messenger.Factories;
 using Turbo.Navigator;
 using Turbo.Networking;
 using Turbo.Networking.Clients;
@@ -125,6 +130,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICatalogManager, CatalogManager>();
         services.AddSingleton<IPlayerManager, PlayerManager>();
         services.AddSingleton<IRoomManager, RoomManager>();
+        services.AddSingleton<IMessengerManager, MessengerManager>();
     }
 
     public static void AddFactories(this IServiceCollection services)
@@ -141,6 +147,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IRoomSecurityFactory, RoomSecurityFactory>();
         services.AddSingleton<ICatalogFactory, CatalogFactory>();
         services.AddSingleton<IRoomChatFactory, RoomChatFactory>();
+        services.AddSingleton<IMessengerFactory, MessengerFactory>();
+        services.AddSingleton<IMessengerFriendsFactory, MessengerFriendsFactory>();
+        services.AddSingleton<IMessengerRequestsFactory, MessengerRequestsFactory>();
     }
 
     public static void AddRepositories(this IServiceCollection services)
@@ -168,5 +177,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPerformanceLogRepository, PerformanceLogRepository>();
         services.AddScoped<IPlayerPerksRepository, PlayerPerksRepository>();
         services.AddScoped<IPlayerFavouriteRoomsRepository, PlayerFavouriteRoomsRepository>();
+        services.AddScoped<IPlayerPreferencesRepository, PlayerPreferencesRepository>();
+        services.AddScoped<IMessengerRequestsRepository, MessengerRequestsRepository>();
+        services.AddScoped<IMessengerFriendsRepository, MessengerFriendsRepository>();
     }
 }

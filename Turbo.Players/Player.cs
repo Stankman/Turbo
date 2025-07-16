@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Turbo.Core.Game.Inventory;
+using Turbo.Core.Game.Messenger;
 using Turbo.Core.Game.Players;
 using Turbo.Core.Game.Players.Constants;
 using Turbo.Core.Game.Rooms.Object;
@@ -13,13 +14,16 @@ namespace Turbo.Players;
 public class Player(
     ILogger<IPlayer> _logger,
     IPlayerManager _playerManager,
-    IPlayerDetails _playerDetails) : Component, IPlayer
+    IPlayerDetails _playerDetails,
+    IPlayerPreferences _playerPreferences) : Component, IPlayer
 {
     public IPlayerManager PlayerManager { get; } = _playerManager;
     public IPlayerDetails PlayerDetails { get; } = _playerDetails;
     public IPlayerInventory PlayerInventory { get; private set; }
     public IPlayerWallet PlayerWallet { get; private set; }
     public IPlayerPerks PlayerPerks { get; private set; }
+    public IPlayerPreferences PlayerPreferences { get; } = _playerPreferences;
+    public IMessenger Messenger { get; private set; }
     public ISession Session { get; private set; }
     public IRoomObjectAvatar RoomObject { get; private set; }
 
@@ -61,9 +65,19 @@ public class Player(
         return true;
     }
 
+    public bool SetMessenger(IMessenger messenger)
+    {
+        if (Messenger != null && Messenger != messenger) return false;
+        Messenger = messenger;
+        return true;
+    }
+
     public async Task<bool> SetupRoomObject()
     {
-        if (RoomObject == null) return false;
+        if (RoomObject == null)
+            return false;
+
+        // Optionally, initialize logic or perform setup steps here in the future
 
         return true;
     }
@@ -117,8 +131,9 @@ public class Player(
     {
         PlayerDetails.PlayerStatus = PlayerStatusEnum.Online;
 
-        if (PlayerWallet != null) await PlayerWallet.InitAsync();
         if (PlayerInventory != null) await PlayerInventory.InitAsync();
+        if (PlayerWallet != null) await PlayerWallet.InitAsync();
+        if (Messenger != null) await Messenger.InitAsync();
     }
 
     protected override async Task OnDispose()
@@ -129,12 +144,13 @@ public class Player(
 
         PlayerDetails.PlayerStatus = PlayerStatusEnum.Offline;
 
-        // dispose messenger
+        await Messenger.DisposeAsync();
         // dispose roles
 
-        await PlayerWallet.DisposeAsync();
-        await PlayerInventory.DisposeAsync();
-        await Session.DisposeAsync();
         await PlayerDetails.DisposeAsync();
+        await PlayerInventory.DisposeAsync();
+        await PlayerPreferences.DisposeAsync();
+        await PlayerWallet.DisposeAsync();
+        await Session.DisposeAsync();
     }
 }

@@ -55,7 +55,7 @@ public class TurboPluginManager(
 
             catch (Exception ex)
             {
-                _logger.LogError("{Context} -> {Plugin} not loaded", nameof(TurboPluginManager), plugin, ex.StackTrace);
+                _logger.LogError("{Context} -> {Plugin} not loaded : {ex}", nameof(TurboPluginManager), plugin, ex.StackTrace);
                 Console.WriteLine($"{ex.StackTrace}");
             }
 
@@ -65,32 +65,49 @@ public class TurboPluginManager(
 
     private void CreatePluginInstance(Type pluginType)
     {
-        var constructors = pluginType.GetConstructors();
-        var firstConstrutor = constructors.FirstOrDefault(); // Assume we will have only one constructor
-        var parameters = new List<object>();
-
-        // Get plugin constructor params
-        foreach (var param in firstConstrutor.GetParameters())
-        {
-            // Get instance of the param class
-            var service = _serviceProvider.GetService(param.ParameterType);
-            parameters.Add(service);
-        }
-
         try
         {
+            var constructors = pluginType.GetConstructors();
+            var firstConstructor = constructors.FirstOrDefault();
+
+            if (firstConstructor == null)
+            {
+                _logger.LogError("No public constructor found for plugin type {PluginType} in assembly {Assembly}", pluginType.FullName, pluginType.Assembly.FullName);
+                return;
+            }
+
+            var parameters = new List<object>();
+
+            foreach (var param in firstConstructor.GetParameters())
+            {
+                var service = _serviceProvider.GetService(param.ParameterType);
+                parameters.Add(service);
+            }
+
             var pluginInstance = Activator.CreateInstance(pluginType, [.. parameters]) as ITurboPlugin;
 
-            _plugins.Add(pluginInstance);
-
             if (pluginInstance != null)
+            {
+                _plugins.Add(pluginInstance);
                 _logger.LogInformation("{Context} -> Loaded {PluginName} by {PluginAuthor}", nameof(TurboPluginManager),
                     pluginInstance.PluginName, pluginInstance.PluginAuthor);
+            }
+            else
+            {
+                _logger.LogError("Failed to create instance of plugin type {PluginType}", pluginType.FullName);
+            }
         }
-
+        catch (ReflectionTypeLoadException rex)
+        {
+            foreach (var loaderException in rex.LoaderExceptions)
+            {
+                _logger.LogError("LoaderException: {Message}", loaderException.Message);
+            }
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            _logger.LogError("Exception while creating plugin instance for {PluginType}: {Exception}", pluginType.FullName, ex);
+            Console.WriteLine($"Stack Trace: {ex}");
         }
     }
 }

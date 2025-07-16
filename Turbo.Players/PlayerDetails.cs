@@ -9,7 +9,6 @@ using Turbo.Core.Storage;
 namespace Turbo.Players;
 
 public class PlayerDetails(
-    IPlayerManager _playerManager,
     PlayerEntity _playerEntity,
     IStorageQueue _storageQueue) : IPlayerDetails
 {

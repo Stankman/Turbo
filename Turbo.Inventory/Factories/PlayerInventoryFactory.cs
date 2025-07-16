@@ -11,6 +11,7 @@ public class PlayerInventoryFactory(IServiceProvider _provider) : IPlayerInvento
 {
     public IPlayerInventory Create(IPlayer player)
     {
+        //TODO Add more inventories Pet, Bots, etc..
         return ActivatorUtilities.CreateInstance<PlayerInventory>(_provider, player,
             ActivatorUtilities.CreateInstance<PlayerFurnitureInventory>(_provider, player),
             ActivatorUtilities.CreateInstance<PlayerBadgeInventory>(_provider, player));

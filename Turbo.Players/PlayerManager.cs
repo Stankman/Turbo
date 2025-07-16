@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Turbo.Core.Database.Dtos;
 using Turbo.Core.Database.Entities.Players;
 using Turbo.Core.Database.Factories.Players;
 using Turbo.Core.Game.Inventory;
@@ -74,10 +75,13 @@ public class PlayerManager(
             var playerEntity = await playerRepository.FindAsync(id);
 
             if (playerEntity == null) return null;
+            
+            var playerPreferencesEntity = await GetPlayerPreferencesAsync(playerEntity.Id);
 
-            return _playerFactory.Create(playerEntity);
+            if (playerPreferencesEntity == null) return null;
+
+            return _playerFactory.Create(playerEntity, playerPreferencesEntity);
         }
-
         catch (Exception ex)
         {
             _logger.LogError(ex, "\u001b[91mError fetching offline player by ID\u001b[0m");
@@ -99,7 +103,11 @@ public class PlayerManager(
 
             var playerEntity = await playerRepository.FindAsync(playerDTO.Id);
 
-            return _playerFactory.Create(playerEntity);
+            var playerPreferencesEntity = await GetPlayerPreferencesAsync(playerEntity.Id);
+
+            if (playerPreferencesEntity == null) return null;
+
+            return _playerFactory.Create(playerEntity, playerPreferencesEntity);
         }
         catch (Exception ex)
         {
@@ -129,6 +137,15 @@ public class PlayerManager(
         await player.InitAsync();
 
         return player;
+    }
+    
+    //This should be created by CMS
+    private async Task<PlayerPreferencesEntity> GetPlayerPreferencesAsync(int playerEntityId)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var playerPreferencesRepository = scope.ServiceProvider.GetService<IPlayerPreferencesRepository>();
+        var playerPreferencesEntity = await playerPreferencesRepository.FindAsync(playerEntityId);
+        return playerPreferencesEntity;
     }
 
     public async Task RemovePlayer(int id)
