@@ -22,18 +22,19 @@ public class Messenger : Component, IMessenger
     public IMessengerRequestsManager MessengerRequestsManager { get; }
 
     public Messenger(
-        ILogger<IMessenger> logger,
-        IMessengerManager messengerManager,
-        IPlayerManager playerManager,
-        IPlayer player,
-        IMessengerFriendsFactory messengerFriendsFactory,
-        IMessengerRequestsFactory messengerRequestsFactory)
+        ILogger<IMessenger> _logger,
+        IMessengerManager _messengerManager,
+        IPlayerManager _playerManager,
+        IPlayer _player,
+        IMessengerFriendsFactory _messengerFriendsFactory,
+        IMessengerRequestsFactory _messengerRequestsFactory)
     {
-        Logger = logger;
-        MessengerManager = messengerManager;
-        Player = player;
-        MessengerFriendsManager = messengerFriendsFactory.Create(this);
-        MessengerRequestsManager = messengerRequestsFactory.Create(this);
+        Logger = _logger;
+        MessengerManager = _messengerManager;
+        PlayerManager = _playerManager;
+        Player = _player;
+        MessengerFriendsManager = _messengerFriendsFactory.Create(this);
+        MessengerRequestsManager = _messengerRequestsFactory.Create(this);
     }
 
     protected override async Task OnInit()

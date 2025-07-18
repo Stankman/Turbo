@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Turbo.Core.Database.Entities.Messenger;
+using Turbo.Core.Database.Entities.Players;
 using Turbo.Database.Context;
 
 namespace Turbo.Database.Repositories.Messenger;
@@ -20,20 +20,27 @@ public class MessengerRequestsRepository(IEmulatorContext _context) : IMessenger
     {
         return await _context.MessengerRequests
             .Where(entity => entity.RequestedPlayerId == playerId)
+            .Include(entity => entity.PlayerEntity)
+            .Include(entity => entity.RequestedPlayerEntity)
             .ToListAsync();
     }
 
     public async Task<MessengerRequestEntity> CreateRequestAsync(int playerId, int requestedPlayerId)
     {
+        var playerEntity = await _context.Players.FindAsync(playerId);
+        var requestedPlayerEntity = await _context.Players.FindAsync(requestedPlayerId);
+
         var entity = new MessengerRequestEntity
         {
             PlayerId = playerId,
             RequestedPlayerId = requestedPlayerId
         };
-        
+
         _context.MessengerRequests.Add(entity);
-        
         await _context.SaveChangesAsync();
+
+        entity.PlayerEntity = playerEntity;
+        entity.RequestedPlayerEntity = requestedPlayerEntity;
 
         return entity;
     }

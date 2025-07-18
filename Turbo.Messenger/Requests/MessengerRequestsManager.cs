@@ -22,7 +22,7 @@ public class MessengerRequestsManager(
 
     protected override Task OnInit() => LoadFriendRequests();
 
-    public async Task LoadFriendRequests()
+    private async Task LoadFriendRequests()
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var messengerRequestsRepository = scope.ServiceProvider.GetRequiredService<IMessengerRequestsRepository>();

@@ -20,6 +20,8 @@ public class MessengerFriendsRepository(IEmulatorContext _context) : IMessengerF
     {
         return await _context.MessengerFriends
             .Where(entity => entity.PlayerId == playerId)
+            .Include(entity => entity.PlayerEntity)
+            .Include(entity => entity.FriendPlayerEntity)
             .ToListAsync();
     }
 

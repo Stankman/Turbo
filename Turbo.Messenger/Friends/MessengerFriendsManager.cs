@@ -61,7 +61,7 @@ public class MessengerFriendsManager(
         var (playerSideEntity, friendSideEntity) = await messengerFriendsRepository.AddMutualFriendsAsync(_messenger.Id, friendPlayer.Id);
 
         var playerMessengerFriend = _messengerFriendsFactory.CreateMessengerFriend(playerSideEntity, friendPlayer);
-        _friends.Add(playerMessengerFriend);
+        InternalAddFriend(playerMessengerFriend);
 
         IMessengerFriend? friendMessengerFriend = null;
 
