@@ -39,7 +39,7 @@ public class PlayerManager(
 
     public List<PlayerChatStyleEntity> PlayerChatStyles { get; } = [];
 
-    public async Task<IPlayer> GetPlayerById(int id)
+    public async Task<IPlayer?> GetPlayerById(int id)
     {
         if (id <= 0) return null;
 

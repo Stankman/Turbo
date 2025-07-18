@@ -9,7 +9,7 @@ namespace Turbo.Core.Game.Players;
 
 public interface IPlayerManager : IComponent
 {
-    public Task<IPlayer> GetPlayerById(int id);
+    public Task<IPlayer?> GetPlayerById(int id);
     public Task<IPlayer> GetPlayerByUsername(string username);
     public Task<IPlayer> CreatePlayer(int id, ISession session);
     public Task RemovePlayer(int id);

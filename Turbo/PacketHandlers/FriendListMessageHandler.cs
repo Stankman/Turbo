@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Turbo.Core.Game.Messenger.Constants;
+using Turbo.Core.Game.Messenger.Friends;
 using Turbo.Core.Game.Players;
 using Turbo.Core.Networking.Game.Clients;
 using Turbo.Core.PacketHandlers;
@@ -23,40 +25,54 @@ public class FriendListMessageHandler(
         messageHub.Subscribe<MessengerInitEventMessage>(this, OnMessengerInitMessage);
         messageHub.Subscribe<AcceptFriendMessage>(this, OnAcceptFriendMessage);
         messageHub.Subscribe<DeclineFriendMessage>(this, OnDeclineFriendMessage);
+        messageHub.Subscribe<GetFriendRequestsMessage>(this, OnGetFriendRequestsMessage);
     }
 
-    private void OnAcceptFriendMessage(AcceptFriendMessage message, ISession session)
+    private void OnGetFriendRequestsMessage(GetFriendRequestsMessage message, ISession session)
     {
-        if(session.Player == null || message.Friends == null || message.Friends.Count == 0)
+        if(session.Player == null)
             return;
 
+        session.Send(new FriendRequestsMessage
+        {
+            Requests = session.Player.Messenger.GetPendingRequests()
+        });
+    }
+
+    private async Task OnAcceptFriendMessage(AcceptFriendMessage message, ISession session)
+    {
+        if (session.Player == null || message.Friends == null || message.Friends.Count == 0)
+            return;
+
+        foreach (var friendId in message.Friends)
+        {
+            if (!session.Player.Messenger.HasReceivedRequestFrom(friendId))
+                continue;
+
+            var (playerMessengerFriend, friendMessengerFriend) = await session.Player.Messenger.AcceptFriend(friendId);
+
+            if (playerMessengerFriend != null)
+            {
+                await session.Send(new FriendListUpdateMessage
+                {
+                    AddedFriends = session.Player.Messenger.MessengerFriendsManager.GetFriendsByUpdateType(MessengerFriendUpdateStateEnum.Added)
+                });
+            }
+
+            var friendPlayer = playerMessengerFriend?.Friend;
+
+            if (friendPlayer?.Session != null && friendMessengerFriend != null)
+            {
+                await friendPlayer.Session.Send(new FriendListUpdateMessage
+                {
+                    AddedFriends = friendPlayer.Messenger.MessengerFriendsManager.GetFriendsByUpdateType(MessengerFriendUpdateStateEnum.Added)
+                });
+            }
+        }
     }
 
     private async Task OnDeclineFriendMessage(DeclineFriendMessage message, ISession session)
     {
-        if (session.Player == null)
-            return;
-
-        if (!message.DeclineAll && message.Friends == null || message.Friends.Count == 0)
-            return;
-
-        if (message.DeclineAll)
-        {
-            await session.Player.Messenger.MessengerRequestsManager.ClearFriendRequestsAsync();
-        }
-        else
-        {
-            foreach (var friendId in message.Friends)
-            {
-                var friendPlayer = await playerManager.GetPlayerById(friendId);
-                if (friendPlayer == null)
-                {
-                    continue;
-                }
-
-                await session.Player.Messenger.MessengerRequestsManager.DeleteFriendRequestAsync(friendPlayer);
-            }
-        }
     }
 
     private void OnMessengerInitMessage(MessengerInitEventMessage message, ISession session)
@@ -95,7 +111,6 @@ public class FriendListMessageHandler(
             return;
         }
 
-        // TODO: Replace with emulator settings for max friends and check for special permissions
         const int maxFriends = 500;
         if (session.Player.Messenger.MessengerFriendsManager.Friends.Count >= maxFriends)
         {
@@ -115,24 +130,13 @@ public class FriendListMessageHandler(
             return;
         }
 
-        //Probably scripted, but we can check if the player has already requested the target player
-        if (session.Player.Messenger.HasRequested(targetPlayer))
-        {
-            return;
-        }
+        var request = await session.Player.Messenger.SendFriendRequest(targetPlayer);
 
-        // TODO: Allow plugins to cancel the friend request
-
-        // If player is not online, still make the friend request
-        await session.Player.Messenger.MessengerRequestsManager.CreateFriendRequestAsync(targetPlayer);
-
-        if (targetPlayer.Session != null)
+        if (request != null && targetPlayer.Session != null)
         {
             await targetPlayer.Session.Send(new NewFriendRequestMessage
             {
-                PlayerId = session.Player.Id,
-                PlayerName = session.Player.Name,
-                PlayerFigure = session.Player.Figure
+                Request = request
             });
         }
     }

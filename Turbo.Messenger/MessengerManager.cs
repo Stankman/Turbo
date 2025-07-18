@@ -8,6 +8,7 @@ using Turbo.Core.Game.Players;
 using Turbo.Core.Utilities;
 
 namespace Turbo.Messenger;
+
 public class MessengerManager(
     ILogger<IMessengerManager> _logger,
     IMessengerFactory _messengerFactory,
@@ -31,15 +32,14 @@ public class MessengerManager(
         }
     }
 
-    public async Task<IMessenger> AddMessenger(IMessenger messenger)
+    public IMessenger? AddMessenger(IMessenger messenger)
     {
-        if(messenger == null) return null;
-        
+        if (messenger == null)
+            return null;
+
         if (_messengers.TryAdd(messenger.Id, messenger))
-        {
-            await messenger.InitAsync();
             return messenger;
-        }
+
         _logger.LogWarning("Messenger for player {PlayerId} already exists", messenger.Id);
         return null;
     }

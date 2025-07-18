@@ -97,7 +97,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("CatalogPageEntityId");
 
-                    b.ToTable("catalog_offers");
+                    b.ToTable("catalog_offers", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Catalog.CatalogPageEntity", b =>
@@ -170,7 +170,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("ParentEntityId");
 
-                    b.ToTable("catalog_pages");
+                    b.ToTable("catalog_pages", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Catalog.CatalogProductEntity", b =>
@@ -236,7 +236,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("FurnitureDefinitionEntityId");
 
-                    b.ToTable("catalog_products");
+                    b.ToTable("catalog_products", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Furniture.FurnitureDefinitionEntity", b =>
@@ -384,7 +384,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("SpriteId", "Type")
                         .IsUnique();
 
-                    b.ToTable("furniture_definitions");
+                    b.ToTable("furniture_definitions", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Furniture.FurnitureEntity", b =>
@@ -460,7 +460,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("RoomEntityId");
 
-                    b.ToTable("furniture");
+                    b.ToTable("furniture", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Furniture.FurnitureTeleportLinkEntity", b =>
@@ -501,7 +501,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("FurnitureEntityTwoId")
                         .IsUnique();
 
-                    b.ToTable("furniture_teleport_links");
+                    b.ToTable("furniture_teleport_links", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Messenger.MessengerCategoryEntity", b =>
@@ -540,7 +540,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId", "Name")
                         .IsUnique();
 
-                    b.ToTable("messenger_categories");
+                    b.ToTable("messenger_categories", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Messenger.MessengerFriendEntity", b =>
@@ -590,7 +590,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId", "FriendPlayerEntityId")
                         .IsUnique();
 
-                    b.ToTable("messenger_friends");
+                    b.ToTable("messenger_friends", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Messenger.MessengerRequestEntity", b =>
@@ -630,7 +630,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId", "RequestedPlayerEntityId")
                         .IsUnique();
 
-                    b.ToTable("messenger_requests");
+                    b.ToTable("messenger_requests", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Navigator.NavigatorEventCategoryEntity", b =>
@@ -666,7 +666,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("navigator_eventcats");
+                    b.ToTable("navigator_eventcats", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Navigator.NavigatorFlatCategoryEntity", b =>
@@ -728,7 +728,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("navigator_flatcats");
+                    b.ToTable("navigator_flatcats", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Navigator.NavigatorTopLevelContextEntity", b =>
@@ -771,7 +771,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("SearchCode")
                         .IsUnique();
 
-                    b.ToTable("navigator_top_level_contexts");
+                    b.ToTable("navigator_top_level_contexts", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerBadgeEntity", b =>
@@ -814,7 +814,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId", "BadgeCode")
                         .IsUnique();
 
-                    b.ToTable("player_badges");
+                    b.ToTable("player_badges", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerChatStyleEntity", b =>
@@ -848,7 +848,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("ClientStyleId")
                         .IsUnique();
 
-                    b.ToTable("player_chat_styles");
+                    b.ToTable("player_chat_styles", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerChatStyleOwnedEntity", b =>
@@ -888,7 +888,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId", "ChatStyleId")
                         .IsUnique();
 
-                    b.ToTable("player_chat_styles_owned");
+                    b.ToTable("player_chat_styles_owned", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerCurrencyEntity", b =>
@@ -933,7 +933,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId", "Type")
                         .IsUnique();
 
-                    b.ToTable("player_currencies");
+                    b.ToTable("player_currencies", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerEntity", b =>
@@ -994,7 +994,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("players");
+                    b.ToTable("players", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerFavouriteRoomsEntity", b =>
@@ -1026,7 +1026,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerId", "RoomId")
                         .IsUnique();
 
-                    b.ToTable("player_favourite_rooms");
+                    b.ToTable("player_favourite_rooms", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerPerksEntity", b =>
@@ -1112,7 +1112,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId")
                         .IsUnique();
 
-                    b.ToTable("player_perks");
+                    b.ToTable("player_perks", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Players.PlayerPreferencesEntity", b =>
@@ -1154,7 +1154,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("PlayerEntityId")
                         .IsUnique();
 
-                    b.ToTable("player_preferences");
+                    b.ToTable("player_preferences", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Room.RoomBanEntity", b =>
@@ -1198,7 +1198,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("RoomEntityId", "PlayerEntityId")
                         .IsUnique();
 
-                    b.ToTable("room_bans");
+                    b.ToTable("room_bans", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Room.RoomChatlogEntity", b =>
@@ -1249,7 +1249,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("TargetPlayerEntityId");
 
-                    b.ToTable("room_chatlogs");
+                    b.ToTable("room_chatlogs", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Room.RoomEntity", b =>
@@ -1444,7 +1444,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("RoomModelEntityId");
 
-                    b.ToTable("rooms");
+                    b.ToTable("rooms", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Room.RoomEntryLogEntity", b =>
@@ -1483,7 +1483,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("RoomEntityId");
 
-                    b.ToTable("room_entry_logs");
+                    b.ToTable("room_entry_logs", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Room.RoomModelEntity", b =>
@@ -1554,7 +1554,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("room_models");
+                    b.ToTable("room_models", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Room.RoomMuteEntity", b =>
@@ -1598,7 +1598,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("RoomEntityId", "PlayerEntityId")
                         .IsUnique();
 
-                    b.ToTable("room_mutes");
+                    b.ToTable("room_mutes", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Room.RoomRightEntity", b =>
@@ -1638,7 +1638,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("RoomEntityId", "PlayerEntityId")
                         .IsUnique();
 
-                    b.ToTable("room_rights");
+                    b.ToTable("room_rights", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Security.SecurityTicketEntity", b =>
@@ -1691,7 +1691,7 @@ namespace Turbo.Main.Migrations
                     b.HasIndex("Ticket")
                         .IsUnique();
 
-                    b.ToTable("security_tickets");
+                    b.ToTable("security_tickets", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Tracking.PerformanceLogEntity", b =>
@@ -1753,7 +1753,7 @@ namespace Turbo.Main.Migrations
 
                     b.HasIndex("IPAddress");
 
-                    b.ToTable("performance_logs");
+                    b.ToTable("performance_logs", (string)null);
                 });
 
             modelBuilder.Entity("Turbo.Core.Database.Entities.Catalog.CatalogOfferEntity", b =>

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Turbo.Core.Database.Entities.Messenger;
+using Turbo.Core.Game.Messenger.Constants;
 using Turbo.Database.Context;
 
 namespace Turbo.Database.Repositories.Messenger;
@@ -22,27 +23,42 @@ public class MessengerFriendsRepository(IEmulatorContext _context) : IMessengerF
             .ToListAsync();
     }
 
-    public async Task<MessengerFriendEntity> AddFriendAsync(int playerId, int friendPlayerId)
+    public async Task<(MessengerFriendEntity PlayerSide, MessengerFriendEntity FriendSide)> AddMutualFriendsAsync(int playerId, int friendPlayerId)
     {
-        var entity = new MessengerFriendEntity
+        var existing = await _context.MessengerFriends
+            .Where(f =>
+                (f.PlayerId == playerId && f.FriendPlayerId == friendPlayerId) ||
+                (f.PlayerId == friendPlayerId && f.FriendPlayerId == playerId))
+            .ToListAsync();
+
+        var playerSide = existing.FirstOrDefault(f => f.PlayerId == playerId);
+        var friendSide = existing.FirstOrDefault(f => f.PlayerId == friendPlayerId);
+
+        if (playerSide == null)
         {
-            PlayerId = playerId,
-            FriendPlayerId = friendPlayerId
-        };
-        _context.MessengerFriends.Add(entity);
+            playerSide = new MessengerFriendEntity { PlayerId = playerId, FriendPlayerId = friendPlayerId };
+            _context.MessengerFriends.Add(playerSide);
+        }
+
+        if (friendSide == null)
+        {
+            friendSide = new MessengerFriendEntity { PlayerId = friendPlayerId, FriendPlayerId = playerId };
+            _context.MessengerFriends.Add(friendSide);
+        }
+
         await _context.SaveChangesAsync();
-        return entity;
+
+        return (playerSide, friendSide);
     }
 
-    public async Task RemoveFriendAsync(int playerId, int friendPlayerId)
+    public async Task DeleteMutualFriendsAsync(int playerId, int friendPlayerId)
     {
-        var entity = await _context.MessengerFriends
-            .FirstOrDefaultAsync(f => f.PlayerId == playerId && f.FriendPlayerId == friendPlayerId);
-
-        if (entity != null)
-        {
-            _context.MessengerFriends.Remove(entity);
-            await _context.SaveChangesAsync();
-        }
+        var friendsToDelete = await _context.MessengerFriends
+            .Where(f =>
+                (f.PlayerId == playerId && f.FriendPlayerId == friendPlayerId) ||
+                (f.PlayerId == friendPlayerId && f.FriendPlayerId == playerId))
+            .ToListAsync();
+        _context.MessengerFriends.RemoveRange(friendsToDelete);
+        await _context.SaveChangesAsync();
     }
 }

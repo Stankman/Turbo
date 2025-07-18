@@ -1,7 +1,9 @@
 ﻿using Turbo.Core.Game.Inventory;
 using Turbo.Core.Game.Messenger;
+using Turbo.Core.Game.Players.Constants;
 using Turbo.Core.Game.Rooms;
 using Turbo.Core.Game.Rooms.Object;
+using Turbo.Core.Game.Rooms.Object.Constants;
 using Turbo.Core.Networking.Game.Clients;
 using Turbo.Core.Security;
 using Turbo.Core.Utilities;
@@ -19,7 +21,10 @@ public interface IPlayer : IRoomObjectAvatarHolder, IRoomManipulator, IPermissio
     public IMessenger Messenger { get; }
     public new int Id { get; }
     public new string Name { get; }
-
+    public new string Motto { get; }
+    public new string Figure { get; }
+    public new AvatarGender Gender { get; }
+    public new PlayerStatusEnum Status { get; }
     public bool SetInventory(IPlayerInventory playerInventory);
     public bool SetWallet(IPlayerWallet playerWallet);
     public bool SetPerks(IPlayerPerks playerPerks);

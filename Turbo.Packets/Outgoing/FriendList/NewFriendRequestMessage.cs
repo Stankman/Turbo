@@ -1,10 +1,9 @@
-﻿using Turbo.Core.Packets.Messages;
+﻿using Turbo.Core.Game.Messenger.Requests;
+using Turbo.Core.Packets.Messages;
 
 namespace Turbo.Packets.Outgoing.FriendList;
 
 public record NewFriendRequestMessage : IComposer
 {
-    public int PlayerId { get; init; }
-    public string PlayerName { get; init; }
-    public string PlayerFigure { get; init; }
+    public IMessengerRequest Request { get; init; }
 }

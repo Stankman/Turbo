@@ -7,9 +7,11 @@ namespace Turbo.Core.Game.Messenger.Requests;
 
 public interface IMessengerRequestsManager : IComponent
 {
-    IReadOnlyList<IMessengerRequest> Requests { get; }
-    Task LoadFriendRequests();
-    Task CreateFriendRequestAsync(IPlayer targetPlayer);
-    Task ClearFriendRequestsAsync();
-    Task DeleteFriendRequestAsync(IPlayer requestedByPlayer);
+    public IReadOnlyList<IMessengerRequest> Requests { get; }
+    public Task LoadFriendRequests();
+    public Task<IMessengerRequest?> CreateFriendRequestAsync(IPlayer targetPlayer);
+    public Task<IMessengerRequest?> GetFriendRequestAsync(int requestedByPlayerId);
+    public Task DeleteFriendRequestAsync(int requestedByPlayerId);
+    public Task ClearFriendRequestsAsync();
+    public void InternalAddRequest(IMessengerRequest request);
 }

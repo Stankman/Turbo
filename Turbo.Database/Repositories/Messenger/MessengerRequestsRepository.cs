@@ -16,10 +16,10 @@ public class MessengerRequestsRepository(IEmulatorContext _context) : IMessenger
             .FindAsync(id);
     }
 
-    public async Task<List<MessengerRequestEntity>> FindAllByPlayerIdAsync(int playerId)
+    public async Task<List<MessengerRequestEntity>> FindPlayerRequestsAsync(int playerId)
     {
         return await _context.MessengerRequests
-            .Where(entity => entity.PlayerId == playerId)
+            .Where(entity => entity.RequestedPlayerId == playerId)
             .ToListAsync();
     }
 
@@ -30,15 +30,18 @@ public class MessengerRequestsRepository(IEmulatorContext _context) : IMessenger
             PlayerId = playerId,
             RequestedPlayerId = requestedPlayerId
         };
+        
         _context.MessengerRequests.Add(entity);
+        
         await _context.SaveChangesAsync();
+
         return entity;
     }
 
-    public async Task DeleteRequestAsync(int playerId, int requestedPlayerId)
+    public async Task DeleteRequestAsync(int playerId, int targetPlayerId)
     {
         var entity = await _context.MessengerRequests
-            .FirstOrDefaultAsync(r => r.PlayerId == playerId && r.RequestedPlayerId == requestedPlayerId);
+            .FirstOrDefaultAsync(r => r.PlayerId == playerId && r.RequestedPlayerId == targetPlayerId);
 
         if (entity != null)
         {

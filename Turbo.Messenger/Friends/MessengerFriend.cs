@@ -1,26 +1,18 @@
 ﻿using Turbo.Core.Database.Entities.Messenger;
+using Turbo.Core.Game.Messenger;
+using Turbo.Core.Game.Messenger.Constants;
 using Turbo.Core.Game.Messenger.Friends;
+using Turbo.Core.Game.Players;
 
 namespace Turbo.Messenger.Friends;
 
-public class MessengerFriend : IMessengerFriend
+public class MessengerFriend(
+    MessengerFriendEntity _entity,
+    IPlayer _friendPlayer) : IMessengerFriend
 {
-    public int PlayerEntityId { get; }
-    public int FriendPlayerEntityId { get; }
-    public int? MessengerCategoryEntityId { get; }
-    public int Id { get; }
-    public string FriendName { get; }
-    public string FriendLook { get; }
-    public int RelationType { get; }
-
-    public MessengerFriend(MessengerFriendEntity entity)
-    {
-        PlayerEntityId = entity.PlayerId;
-        FriendPlayerEntityId = entity.FriendPlayerId;
-        MessengerCategoryEntityId = entity.MessengerCategoryEntityId;
-        Id = entity.Id;
-        FriendName = entity.FriendPlayerEntity?.Name ?? string.Empty;
-        FriendLook = entity.FriendPlayerEntity?.Figure ?? string.Empty;
-        RelationType = (int)entity.RelationType;
-    }
+    public int PlayerEntityId { get; } = _entity.PlayerId;
+    public int FriendPlayerEntityId { get; } = _entity.FriendPlayerId;
+    public IPlayer Friend { get; } = _friendPlayer;
+    public int? MessengerCategoryEntityId { get; } = _entity.MessengerCategoryEntityId;
+    public MessengerFriendRelationEnum RelationType { get; } = _entity.RelationType;
 }

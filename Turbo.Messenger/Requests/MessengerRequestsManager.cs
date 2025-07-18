@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Turbo.Core.Database.Factories.Messenger;
 using Turbo.Core.Game.Messenger;
 using Turbo.Core.Game.Messenger.Requests;
 using Turbo.Core.Game.Players;
@@ -11,6 +12,7 @@ namespace Turbo.Messenger.Requests;
 public class MessengerRequestsManager(
         ILogger<IMessengerRequestsManager> _logger,
         IServiceScopeFactory _serviceScopeFactory,
+        IMessengerRequestsFactory _messengerRequestsFactory,
         IMessenger _messenger
 ) : Component, IMessengerRequestsManager
 {
@@ -24,20 +26,32 @@ public class MessengerRequestsManager(
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var messengerRequestsRepository = scope.ServiceProvider.GetRequiredService<IMessengerRequestsRepository>();
-        var requestEntities = await messengerRequestsRepository.FindAllByPlayerIdAsync(_messenger.Id);
+        var requestEntities = await messengerRequestsRepository.FindPlayerRequestsAsync(_messenger.Id);
 
         _requests.Clear();
+
         if (requestEntities != null)
         {
             foreach (var requestEntity in requestEntities)
             {
-                var request = new MessengerRequest(requestEntity);
+                var request = _messengerRequestsFactory.CreateMessengerRequest(requestEntity);
                 _requests.Add(request);
             }
         }
     }
 
-    public async Task CreateFriendRequestAsync(IPlayer targetPlayer)
+    public Task<IMessengerRequest?> GetFriendRequestAsync(int requestedByPlayerId)
+    {
+        var request = _requests.FirstOrDefault(r =>
+            r is MessengerRequest messengerRequest &&
+            messengerRequest.PlayerEntityId == requestedByPlayerId &&
+            messengerRequest.TargetPlayerEntityId == _messenger.Id
+        );
+
+        return Task.FromResult(request);
+    }
+
+    public async Task<IMessengerRequest?> CreateFriendRequestAsync(IPlayer targetPlayer)
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var messengerRequestsRepository = scope.ServiceProvider.GetRequiredService<IMessengerRequestsRepository>();
@@ -46,31 +60,53 @@ public class MessengerRequestsManager(
 
         if (newRequestEntity != null)
         {
-            var request = new MessengerRequest(newRequestEntity);
-            _requests.Add(request);
+            var request = _messengerRequestsFactory.CreateMessengerRequest(newRequestEntity);
+            
+            if (targetPlayer.Session != null)
+            {
+                targetPlayer.Messenger.MessengerRequestsManager.InternalAddRequest(request);
+            }
+            
+            return request;
         }
+
+        return null;
+    }
+
+    public async Task DeleteFriendRequestAsync(int playerId)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var messengerRequestsRepository = scope.ServiceProvider.GetRequiredService<IMessengerRequestsRepository>();
+
+        await messengerRequestsRepository.DeleteRequestAsync(playerId, _messenger.Id);
+
+        _requests.RemoveAll(request =>
+            request is MessengerRequest messengerRequest &&
+            messengerRequest.PlayerEntityId == playerId &&
+            messengerRequest.TargetPlayerEntityId == _messenger.Id
+        );
     }
 
     public async Task ClearFriendRequestsAsync()
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var messengerRequestsRepository = scope.ServiceProvider.GetRequiredService<IMessengerRequestsRepository>();
+        
         await messengerRequestsRepository.ClearFriendRequestsAsync(_messenger.Id);
+
         _requests.Clear();
     }
 
-    public async Task DeleteFriendRequestAsync(IPlayer requestedByPlayer)
+    public void InternalAddRequest(IMessengerRequest request)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var messengerRequestsRepository = scope.ServiceProvider.GetRequiredService<IMessengerRequestsRepository>();
+        if (_requests.Any(r =>
+            r is MessengerRequest mr &&
+            mr.PlayerEntityId == request.PlayerEntityId))
+        {
+            return;
+        }
 
-        await messengerRequestsRepository.DeleteRequestAsync(requestedByPlayer.Id, _messenger.Id);
-
-        _requests.RemoveAll(request =>
-            request is MessengerRequest messengerRequest &&
-            messengerRequest.PlayerEntityId == requestedByPlayer.Id &&
-            messengerRequest.RequestedPlayerEntityId == _messenger.Id
-        );
+        _requests.Add(request);
     }
 
     private async Task UnloadFriendRequests()
