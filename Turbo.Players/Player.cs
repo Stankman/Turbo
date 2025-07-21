@@ -145,7 +145,8 @@ public class Player(
 
         PlayerDetails.PlayerStatus = PlayerStatusEnum.Offline;
 
-        if(Messenger != null) await Messenger.DisposeAsync();
+        if (Messenger != null) await Messenger.MessengerManager.RemoveMessenger(Id);
+
         // dispose roles
 
         await PlayerDetails.DisposeAsync();

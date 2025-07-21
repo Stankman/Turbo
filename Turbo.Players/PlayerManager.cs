@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Turbo.Core.Database.Dtos;
 using Turbo.Core.Database.Entities.Players;
 using Turbo.Core.Database.Factories.Players;
 using Turbo.Core.Game.Inventory;
@@ -39,33 +38,33 @@ public class PlayerManager(
 
     public List<PlayerChatStyleEntity> PlayerChatStyles { get; } = [];
 
-    public async Task<IPlayer?> GetPlayerById(int id)
+    public IPlayer GetPlayerById(int id)
     {
-        if (id <= 0) return null;
+        if ((id <= 0) || !_players.TryGetValue(id, out IPlayer value)) return null;
 
-        if (_players.TryGetValue(id, out var value))
-            return value;
-
-        return await GetOfflinePlayerById(id);
+        return value;
     }
 
-    public async Task<IPlayer> GetPlayerByUsername(string username)
+    public IPlayer GetPlayerByUsername(string username)
     {
-        if (string.IsNullOrWhiteSpace(username))
-            return null;
+        if (username.Length == 0) return null;
 
-        foreach (var player in _players.Values)
+        foreach (IPlayer player in _players.Values)
         {
-            if (player == null) continue;
-            if (string.Equals(player.Name, username))
-                return player;
+            if ((player == null) || !player.Name.Equals(username)) continue;
+
+            return player;
         }
 
-        return await GetOfflinePlayerByUsername(username);
+        return null;
     }
 
     public async Task<IPlayer> GetOfflinePlayerById(int id)
     {
+        var player = GetPlayerById(id);
+
+        if (player != null) return player;
+
         try
         {
             using var scope = _serviceScopeFactory.CreateScope();
@@ -89,8 +88,12 @@ public class PlayerManager(
         }
     }
 
-    private async Task<IPlayer> GetOfflinePlayerByUsername(string username)
+    public async Task<IPlayer> GetOfflinePlayerByUsername(string username)
     {
+        var player = GetPlayerByUsername(username);
+
+        if (player != null) return player;
+
         try
         {
             using var scope = _serviceScopeFactory.CreateScope();
@@ -139,7 +142,6 @@ public class PlayerManager(
         return player;
     }
     
-    //This should be created by CMS
     private async Task<PlayerPreferencesEntity> GetPlayerPreferencesAsync(int playerEntityId)
     {
         using var scope = _serviceScopeFactory.CreateScope();
@@ -152,7 +154,7 @@ public class PlayerManager(
     {
         if (id <= 0) return;
 
-        var player = await GetPlayerById(id);
+        var player = GetPlayerById(id);
 
         if (player == null) return;
 
@@ -175,7 +177,7 @@ public class PlayerManager(
 
     public async Task<string> GetPlayerName(int playerId)
     {
-        var player = await GetPlayerById(playerId);
+        var player = GetPlayerById(playerId);
 
         if (player != null) return player.Name;
 
@@ -190,7 +192,7 @@ public class PlayerManager(
     {
         if (playerId <= 0) return null;
 
-        var player = await GetPlayerById(playerId);
+        var player = GetPlayerById(playerId);
 
         if (player == null)
         {
