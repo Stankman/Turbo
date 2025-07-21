@@ -48,24 +48,6 @@ public class FriendListMessageHandler(
                 continue;
 
             var (playerMessengerFriend, friendMessengerFriend) = await session.Player.Messenger.AcceptFriend(friendId);
-
-            if (playerMessengerFriend != null)
-            {
-                await session.Send(new FriendListUpdateMessage
-                {
-                    AddedFriends = session.Player.Messenger.MessengerFriendsManager.GetFriendsByUpdateType(MessengerFriendUpdateStateEnum.Added)
-                });
-            }
-
-            var friendPlayer = playerMessengerFriend?.Friend;
-
-            if (friendPlayer?.Session != null && friendMessengerFriend != null)
-            {
-                await friendPlayer.Session.Send(new FriendListUpdateMessage
-                {
-                    AddedFriends = friendPlayer.Messenger.MessengerFriendsManager.GetFriendsByUpdateType(MessengerFriendUpdateStateEnum.Added)
-                });
-            }
         }
     }
 

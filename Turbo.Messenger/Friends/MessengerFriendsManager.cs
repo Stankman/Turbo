@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Turbo.Core.Database.Factories.Messenger;
 using Turbo.Core.Game.Messenger;
@@ -20,10 +21,10 @@ public class MessengerFriendsManager(
     IMessenger _messenger
 ) : Component, IMessengerFriendsManager
 {
-    private readonly List<IMessengerFriend> _friends = [];
-    private readonly Dictionary<int, MessengerFriendUpdateStateEnum> _friendListUpdate = new();
-    public IReadOnlyList<IMessengerFriend> Friends => _friends.AsReadOnly();
+    private readonly ConcurrentDictionary<int, IMessengerFriend> _friends = new();
+    private readonly ConcurrentQueue<IMessengerFriendUpdate> _friendUpdates = new();
 
+    public IReadOnlyCollection<IMessengerFriend> Friends => _friends.Values;
     protected override Task OnInit() => LoadFriends();
 
     private async Task LoadFriends()
@@ -42,14 +43,15 @@ public class MessengerFriendsManager(
                 if (friendPlayer == null) continue;
 
                 var messengerFriend = _messengerFriendsFactory.CreateMessengerFriend(messengerFriendEntity, friendPlayer);
-                _friends.Add(messengerFriend);
+                _friends[messengerFriend.FriendPlayerEntityId] = messengerFriend;
             }
         }
     }
 
     public IMessengerFriend? GetMessengerFriendAsync(int friendId)
     {
-        return _friends.FirstOrDefault(f => f.FriendPlayerEntityId == friendId);
+        _friends.TryGetValue(friendId, out var messengerFriend);
+        return messengerFriend;
     }
 
     public async Task<(IMessengerFriend? playerMessengerFriend, IMessengerFriend? friendMessengerFriend)> AddMutualFriendsAsync(IPlayer friendPlayer)
@@ -60,7 +62,7 @@ public class MessengerFriendsManager(
         var (playerSideEntity, friendSideEntity) = await messengerFriendsRepository.AddMutualFriendsAsync(_messenger.Id, friendPlayer.Id);
 
         var playerMessengerFriend = _messengerFriendsFactory.CreateMessengerFriend(playerSideEntity, friendPlayer);
-        InternalAddFriend(playerMessengerFriend);
+        QueueFriendAdded(playerMessengerFriend);
 
         IMessengerFriend? friendMessengerFriend = null;
 
@@ -68,7 +70,7 @@ public class MessengerFriendsManager(
             friendPlayer.Messenger?.MessengerFriendsManager != null)
         {
             friendMessengerFriend = _messengerFriendsFactory.CreateMessengerFriend(friendSideEntity, _messenger.Player);
-            friendPlayer.Messenger.MessengerFriendsManager.InternalAddFriend(friendMessengerFriend);
+            friendPlayer.Messenger.MessengerFriendsManager.QueueFriendAdded(friendMessengerFriend);
         }
 
         return (playerMessengerFriend, friendMessengerFriend);
@@ -85,7 +87,7 @@ public class MessengerFriendsManager(
 
         await messengerFriendsRepository.DeleteMutualFriendsAsync(_messenger.Id, friendPlayer.Id);
 
-        InternalRemoveFriend(friendPlayer.Id);
+        QueueFriendRemoved(friendPlayer.Id);
 
         if (friendPlayer.Status.Equals(PlayerStatusEnum.Online) &&
             friendPlayer.Messenger?.MessengerFriendsManager != null)
@@ -94,60 +96,58 @@ public class MessengerFriendsManager(
 
             if(friendMessengerFriend == null) return false;
 
-            friendPlayer.Messenger.MessengerFriendsManager.InternalRemoveFriend(_messenger.Id);
+            friendPlayer.Messenger.MessengerFriendsManager.QueueFriendRemoved(_messenger.Id);
         }
 
         return true;
     }
 
-    public void InternalAddFriend(IMessengerFriend messengerFriend)
+    public void QueueFriendAdded(IMessengerFriend messengerFriend)
     {
-        if (_friends.Any(f => f.FriendPlayerEntityId == messengerFriend.FriendPlayerEntityId))
-            return;
-
-        _friends.Add(messengerFriend);
-        _friendListUpdate[messengerFriend.FriendPlayerEntityId] = MessengerFriendUpdateStateEnum.Added;
-    }
-
-    public void InternalRemoveFriend(int friendId)
-    {
-        var messengerFriend = _friends.FirstOrDefault(f => f.FriendPlayerEntityId == friendId);
-        if (messengerFriend != null)
+        if (_friends.TryAdd(messengerFriend.FriendPlayerEntityId, messengerFriend))
         {
-            _friends.Remove(messengerFriend);
-        }
-
-        _friendListUpdate[friendId] = MessengerFriendUpdateStateEnum.Removed;
-    }
-
-    public void MarkFriendAsUpdated(int friendId)
-    {
-        if (_friends.Any(f => f.FriendPlayerEntityId == friendId))
-        {
-            _friendListUpdate[friendId] = MessengerFriendUpdateStateEnum.Updated;
+            _friendUpdates.Enqueue(new MessengerFriendUpdate
+            {
+                FriendId = messengerFriend.FriendPlayerEntityId,
+                FriendData = messengerFriend,
+                UpdateType = FriendListUpdateActionEnum.Added
+            });
         }
     }
 
-    public List<int> GetRemovedFriendIds()
+    public void QueueFriendUpdated(IMessengerFriend messengerFriend)
     {
-        return _friendListUpdate
-            .Where(kv => kv.Value == MessengerFriendUpdateStateEnum.Removed)
-            .Select(kv => kv.Key)
-            .ToList();
+        if (_friends.ContainsKey(messengerFriend.FriendPlayerEntityId))
+        {
+            _friends[messengerFriend.FriendPlayerEntityId] = messengerFriend;
+            _friendUpdates.Enqueue(new MessengerFriendUpdate
+            {
+                FriendId = messengerFriend.FriendPlayerEntityId,
+                FriendData = messengerFriend,
+                UpdateType = FriendListUpdateActionEnum.Updated
+            });
+        }
     }
 
-    public List<IMessengerFriend> GetFriendsByUpdateType(MessengerFriendUpdateStateEnum state)
+    public void QueueFriendRemoved(int friendId)
     {
-        return _friendListUpdate
-            .Where(kv => kv.Value == state)
-            .Select(kv => _friends.FirstOrDefault(f => f.FriendPlayerEntityId == kv.Key))
-            .Where(f => f != null)
-            .ToList()!;
+        if(_friends.ContainsKey(friendId))
+        {
+            _friends.TryRemove(friendId, out _);
+            _friendUpdates.Enqueue(new MessengerFriendUpdate
+            {
+                FriendId = friendId,
+                UpdateType = FriendListUpdateActionEnum.Removed
+            });
+        }
     }
 
-    public void ClearFriendUpdateStates()
+    public List<IMessengerFriendUpdate> DrainFriendUpdates()
     {
-        _friendListUpdate.Clear();
+        var updates = new List<IMessengerFriendUpdate>();
+        while (_friendUpdates.TryDequeue(out var update))
+            updates.Add(update);
+        return updates;
     }
 
     private async Task UnloadFriends()

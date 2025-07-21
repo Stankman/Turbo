@@ -12,10 +12,9 @@ public interface IMessengerFriendsManager : IComponent
     public IMessengerFriend? GetMessengerFriendAsync(int friendId);
     public Task<(IMessengerFriend? playerMessengerFriend, IMessengerFriend? friendMessengerFriend)> AddMutualFriendsAsync(IPlayer friendPlayer);
     public Task<bool> DeleteFriendAsync(IPlayer friendPlayer);
-    public void InternalAddFriend(IMessengerFriend messengerFriend);
-    public void InternalRemoveFriend(int friendId);
-    public void MarkFriendAsUpdated(int friendId);
-    public List<int> GetRemovedFriendIds();
-    public List<IMessengerFriend> GetFriendsByUpdateType(MessengerFriendUpdateStateEnum state);
+    public void QueueFriendAdded(IMessengerFriend messengerFriend);
+    public void QueueFriendUpdated(IMessengerFriend messengerFriend);
+    public void QueueFriendRemoved(int friendId);
+    public List<IMessengerFriendUpdate> DrainFriendUpdates();
     public void ClearFriendUpdateStates();
 }

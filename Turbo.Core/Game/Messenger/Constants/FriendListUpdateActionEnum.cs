@@ -2,7 +2,7 @@
 
 public enum FriendListUpdateActionEnum
 {
-    Remove = -1,
-    Update = 0,
-    Add = 1
+    Removed = -1,
+    Updated = 0,
+    Added = 1
 }
