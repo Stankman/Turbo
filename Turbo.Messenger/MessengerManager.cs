@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Turbo.Core.Database.Factories.Messenger;
@@ -16,20 +15,12 @@ public class MessengerManager(
 ) : Component, IMessengerManager
 {
     private readonly ConcurrentDictionary<int, IMessenger> _messengers = new();
-    protected override Task OnInit() => throw new NotImplementedException();
+    protected override Task OnInit() => Task.CompletedTask;
 
     public IMessenger? GetMessengerForPlayer(IPlayer player)
     {
         if (player == null) return null;
-        try
-        {
-            return _messengers.TryGetValue(player.Id, out var existingMessenger) ? existingMessenger : null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get messenger for player {PlayerId}", player?.Id);
-            return null;
-        }
+        return _messengers.TryGetValue(player.Id, out var existingMessenger) ? existingMessenger : null;
     }
 
     public IMessenger? AddMessenger(IMessenger messenger)
@@ -41,7 +32,7 @@ public class MessengerManager(
             return messenger;
 
         _logger.LogWarning("Messenger for player {PlayerId} already exists", messenger.Id);
-        return null;
+        return _messengers[messenger.Id];
     }
 
     public async Task RemoveMessenger(int playerId)
@@ -56,7 +47,8 @@ public class MessengerManager(
     {
         if (_messengers.IsEmpty) return;
 
-        foreach(var playerId in _messengers.Keys)
+        var keys = _messengers.Keys.ToList();
+        foreach (var playerId in keys)
         {
             await RemoveMessenger(playerId);
         }

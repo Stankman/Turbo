@@ -26,5 +26,5 @@ public interface IMessenger : IComponent
     public Task DeclineAll();
     public bool IsFriendWith(int playerId);
     public bool HasPendingFriendRequestFrom(int playerId);
-    public void SendComposer(IComposer composer);
+    public Task SendComposer(IComposer composer);
 }

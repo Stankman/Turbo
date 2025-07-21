@@ -7,7 +7,6 @@ using Turbo.Core.Game.Players;
 using Turbo.Core.Game.Players.Constants;
 using Turbo.Core.Packets.Messages;
 using Turbo.Core.Utilities;
-using Turbo.Packets.Outgoing.FriendList;
 
 namespace Turbo.Messenger;
 
@@ -41,8 +40,11 @@ public class Messenger : Component, IMessenger
     {
         try
         {
-            await MessengerFriendsManager.InitAsync();
-            await MessengerRequestsManager.InitAsync();
+            await Task.WhenAll(
+                MessengerFriendsManager.InitAsync().AsTask(),
+                MessengerRequestsManager.InitAsync().AsTask()
+            );
+
             MessengerManager.AddMessenger(this);
         }
         catch (Exception ex)
@@ -89,7 +91,7 @@ public class Messenger : Component, IMessenger
             return (null, null);
         }
 
-        var requestedByPlayer = await PlayerManager.GetPlayerById(request.PlayerEntityId);
+        var requestedByPlayer = PlayerManager.GetPlayerById(request.PlayerEntityId);
 
         if (requestedByPlayer == null)
         {
@@ -126,22 +128,27 @@ public class Messenger : Component, IMessenger
 
     public bool HasPendingFriendRequestFrom(int playerId) => HasReceivedRequestFrom(playerId);
 
-    public void SendComposer(IComposer composer)
+    public async Task SendComposer(IComposer composer)
     {
-        foreach (var friend in MessengerFriendsManager.Friends)
-        {
-            var friendPlayer = friend.Friend;
+        var tasks = MessengerFriendsManager.Friends
+            .Where(f => f.Friend.Status == PlayerStatusEnum.Online)
+            .Select(f => f.Friend.Session.Send(composer));
 
-            if (friendPlayer.Status.Equals(PlayerStatusEnum.Online))
-            {
-                friendPlayer.Session.Send(composer);
-            }
-        }
+        await Task.WhenAll(tasks);
     }
 
     protected override async Task OnDispose()
     {
-        await MessengerFriendsManager.DisposeAsync();
-        await MessengerRequestsManager.DisposeAsync();
+        try
+        {
+            // Notify all friends that this player is going offline
+
+            await MessengerFriendsManager.DisposeAsync();
+            await MessengerRequestsManager.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to remove Messenger for PlayerId: {PlayerId}", Id);
+        }
     }
 }

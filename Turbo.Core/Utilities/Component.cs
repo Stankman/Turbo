@@ -13,6 +13,8 @@ public abstract class Component : IComponent
     {
         if (IsInitialized || IsInitializing) return;
 
+        IsInitializing = true;
+
         await OnInit();
 
         IsInitialized = true;

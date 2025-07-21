@@ -47,7 +47,7 @@ public class Session : ISession
     {
         if (Player != null)
         {
-            await Player.DisposeAsync();
+            await Player.PlayerManager.RemovePlayer(Player.Id);
 
             Player = null;
         }

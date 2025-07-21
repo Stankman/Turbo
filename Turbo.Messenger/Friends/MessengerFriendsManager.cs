@@ -21,8 +21,7 @@ public class MessengerFriendsManager(
 ) : Component, IMessengerFriendsManager
 {
     private readonly List<IMessengerFriend> _friends = [];
-    private readonly Dictionary<int, MessengerFriendUpdateStateEnum> _friendUpdates = new();
-
+    private readonly Dictionary<int, MessengerFriendUpdateStateEnum> _friendListUpdate = new();
     public IReadOnlyList<IMessengerFriend> Friends => _friends.AsReadOnly();
 
     protected override Task OnInit() => LoadFriends();
@@ -38,7 +37,7 @@ public class MessengerFriendsManager(
         {
             foreach (var messengerFriendEntity in messengerFriendEntities)
             {
-                var friendPlayer = await _playerManager.GetPlayerById(messengerFriendEntity.FriendPlayerId);
+                var friendPlayer = _playerManager.GetPlayerById(messengerFriendEntity.FriendPlayerId);
 
                 if (friendPlayer == null) continue;
 
@@ -107,7 +106,7 @@ public class MessengerFriendsManager(
             return;
 
         _friends.Add(messengerFriend);
-        _friendUpdates[messengerFriend.FriendPlayerEntityId] = MessengerFriendUpdateStateEnum.Added;
+        _friendListUpdate[messengerFriend.FriendPlayerEntityId] = MessengerFriendUpdateStateEnum.Added;
     }
 
     public void InternalRemoveFriend(int friendId)
@@ -118,20 +117,20 @@ public class MessengerFriendsManager(
             _friends.Remove(messengerFriend);
         }
 
-        _friendUpdates[friendId] = MessengerFriendUpdateStateEnum.Removed;
+        _friendListUpdate[friendId] = MessengerFriendUpdateStateEnum.Removed;
     }
 
     public void MarkFriendAsUpdated(int friendId)
     {
         if (_friends.Any(f => f.FriendPlayerEntityId == friendId))
         {
-            _friendUpdates[friendId] = MessengerFriendUpdateStateEnum.Updated;
+            _friendListUpdate[friendId] = MessengerFriendUpdateStateEnum.Updated;
         }
     }
 
     public List<int> GetRemovedFriendIds()
     {
-        return _friendUpdates
+        return _friendListUpdate
             .Where(kv => kv.Value == MessengerFriendUpdateStateEnum.Removed)
             .Select(kv => kv.Key)
             .ToList();
@@ -139,7 +138,7 @@ public class MessengerFriendsManager(
 
     public List<IMessengerFriend> GetFriendsByUpdateType(MessengerFriendUpdateStateEnum state)
     {
-        return _friendUpdates
+        return _friendListUpdate
             .Where(kv => kv.Value == state)
             .Select(kv => _friends.FirstOrDefault(f => f.FriendPlayerEntityId == kv.Key))
             .Where(f => f != null)
@@ -148,7 +147,7 @@ public class MessengerFriendsManager(
 
     public void ClearFriendUpdateStates()
     {
-        _friendUpdates.Clear();
+        _friendListUpdate.Clear();
     }
 
     private async Task UnloadFriends()

@@ -57,7 +57,7 @@ public class RoomSecurityManager(
 
         if (IsStrictOwner(playerId)) return true;
 
-        var player = await _playerManager.GetPlayerById((int)playerId);
+        var player = _playerManager.GetPlayerById((int)playerId);
 
         if (player != null) return player.HasPermission("any_room_owner");
 
@@ -138,7 +138,7 @@ public class RoomSecurityManager(
     {
         if (playerId <= 0) return;
 
-        var player = await _playerManager.GetPlayerById(playerId);
+        var player = _playerManager.GetPlayerById(playerId);
 
         if (player == null || !CanKickPlayer(manipulator)) return;
 
@@ -157,7 +157,7 @@ public class RoomSecurityManager(
         var playerRepository = scope.ServiceProvider.GetService<IPlayerRepository>();
         var roomBanRepository = scope.ServiceProvider.GetService<IRoomBanRepository>();
 
-        var player = await _playerManager.GetPlayerById(playerId);
+        var player = _playerManager.GetPlayerById(playerId);
 
         if (player == null)
         {
@@ -220,7 +220,7 @@ public class RoomSecurityManager(
             });
         }
 
-        var player = await _playerManager.GetPlayerById(playerId);
+        var player = _playerManager.GetPlayerById(playerId);
 
         if (player != null) RefreshControllerLevel(player);
 

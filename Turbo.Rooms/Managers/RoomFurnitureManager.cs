@@ -195,7 +195,7 @@ public class RoomFurnitureManager : Component, IRoomFurnitureManager
         FloorFurniture.Remove(floorFurniture.Id);
         floorFurniture.ClearRoomObject();
 
-        var player = await _playerManager.GetPlayerById(pickerId);
+        var player = _playerManager.GetPlayerById(pickerId);
 
         if (player == null)
         {
@@ -322,7 +322,7 @@ public class RoomFurnitureManager : Component, IRoomFurnitureManager
         WallFurniture.Remove(wallFurniture.Id);
         wallFurniture.ClearRoomObject();
 
-        var player = await _playerManager.GetPlayerById(pickerId);
+        var player = _playerManager.GetPlayerById(pickerId);
 
         if (player == null)
         {

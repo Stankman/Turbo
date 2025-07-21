@@ -9,29 +9,30 @@ using Turbo.Core.Packets;
 using Turbo.Packets.Incoming.Navigator;
 using Turbo.Packets.Incoming.RoomSettings;
 using Turbo.Packets.Outgoing.RoomSettings;
+using Turbo.Players;
 
 namespace Turbo.Main.PacketHandlers;
 
 public class RoomSettingsMessageHandler(
-    IPacketMessageHub messageHub,
-    IPlayerManager playerManager,
-    IRoomManager roomManager,
-    INavigatorManager navigatorManager)
+    IPacketMessageHub _messageHub,
+    IPlayerManager _playerManager,
+    IRoomManager _roomManager,
+    INavigatorManager _navigatorManager)
     : IPacketHandlerManager
 {
-    private readonly INavigatorManager _navigatorManager = navigatorManager;
+    private readonly INavigatorManager _navigatorManager = _navigatorManager;
 
     public void Register()
     {
-        messageHub.Subscribe<DeleteRoomMessage>(this, OnDeleteRoomMessage);
-        messageHub.Subscribe<GetBannedUsersFromRoomMessage>(this, OnGetBannedUsersFromRoomMessage);
-        messageHub.Subscribe<GetCustomRoomFilterMessage>(this, OnGetCustomRoomFilterMessage);
-        messageHub.Subscribe<GetFlatControllersMessage>(this, OnGetFlatControllersMessage);
-        messageHub.Subscribe<GetRoomSettingsMessage>(this, OnGetRoomSettingsMessage);
-        messageHub.Subscribe<SaveRoomSettingsMessage>(this, OnSaveRoomSettingsMessage);
-        messageHub.Subscribe<UpdateRoomCategoryAndTradeSettingsMessage>(this,
+        _messageHub.Subscribe<DeleteRoomMessage>(this, OnDeleteRoomMessage);
+        _messageHub.Subscribe<GetBannedUsersFromRoomMessage>(this, OnGetBannedUsersFromRoomMessage);
+        _messageHub.Subscribe<GetCustomRoomFilterMessage>(this, OnGetCustomRoomFilterMessage);
+        _messageHub.Subscribe<GetFlatControllersMessage>(this, OnGetFlatControllersMessage);
+        _messageHub.Subscribe<GetRoomSettingsMessage>(this, OnGetRoomSettingsMessage);
+        _messageHub.Subscribe<SaveRoomSettingsMessage>(this, OnSaveRoomSettingsMessage);
+        _messageHub.Subscribe<UpdateRoomCategoryAndTradeSettingsMessage>(this,
             OnUpdateRoomCategoryAndTradeSettingsMessage);
-        messageHub.Subscribe<UpdateRoomFilterMessage>(this, OnUpdateRoomFilterMessage);
+        _messageHub.Subscribe<UpdateRoomFilterMessage>(this, OnUpdateRoomFilterMessage);
     }
 
     protected virtual void OnDeleteRoomMessage(DeleteRoomMessage message, ISession session)
@@ -44,7 +45,7 @@ public class RoomSettingsMessageHandler(
     {
         if (session.Player == null) return;
 
-        var room = await roomManager.GetOfflineRoom(message.RoomId);
+        var room = await _roomManager.GetOfflineRoom(message.RoomId);
 
         if (room == null) return;
 
@@ -56,7 +57,7 @@ public class RoomSettingsMessageHandler(
 
         foreach (var playerId in room.RoomSecurityManager.Bans.Keys)
         {
-            var player = await playerManager.GetPlayerById(playerId);
+            var player = _playerManager.GetPlayerById(playerId);
 
             if (player != null)
             {
@@ -64,7 +65,7 @@ public class RoomSettingsMessageHandler(
             }
             else
             {
-                var username = await playerManager.GetPlayerName(playerId);
+                var username = await _playerManager.GetPlayerName(playerId);
 
                 bans.Add(playerId, username);
             }
@@ -86,7 +87,7 @@ public class RoomSettingsMessageHandler(
     {
         if (session.Player == null) return;
 
-        var room = await roomManager.GetOfflineRoom(message.RoomId);
+        var room = await _roomManager.GetOfflineRoom(message.RoomId);
 
         if (room == null) return;
 
@@ -98,7 +99,7 @@ public class RoomSettingsMessageHandler(
 
         foreach (var playerId in room.RoomSecurityManager.Rights)
         {
-            var player = await playerManager.GetPlayerById(playerId);
+            var player = _playerManager.GetPlayerById(playerId);
 
             if (player != null)
             {
@@ -106,7 +107,7 @@ public class RoomSettingsMessageHandler(
             }
             else
             {
-                var username = await playerManager.GetPlayerName(playerId);
+                var username = await _playerManager.GetPlayerName(playerId);
 
                 controllers.Add(playerId, username);
             }
@@ -123,7 +124,7 @@ public class RoomSettingsMessageHandler(
     {
         if (session.Player == null) return;
 
-        var room = await roomManager.GetOfflineRoom(message.RoomId);
+        var room = await _roomManager.GetOfflineRoom(message.RoomId);
 
         if (room == null)
         {
@@ -159,7 +160,7 @@ public class RoomSettingsMessageHandler(
     {
         if (session.Player == null) return;
 
-        var room = await roomManager.GetOfflineRoom(message.RoomId);
+        var room = await _roomManager.GetOfflineRoom(message.RoomId);
 
         if (room == null) return;
 
