@@ -14,6 +14,9 @@ public class PlayerDetails(
 {
     private int _cachedChatStyleId = -1;
 
+    public event EventHandler<PlayerEntity> PlayerDetailsUpdateEvent;
+    public event EventHandler<PlayerStatusEnum> StatusUpdateEvent;
+
     public int? ChatStyleId
     {
         get => _playerEntity.RoomChatStyleId == null ? -1 : _playerEntity.RoomChatStyleId;
@@ -48,6 +51,7 @@ public class PlayerDetails(
         {
             _playerEntity.Name = value;
             _storageQueue.Add(_playerEntity);
+            PlayerDetailsUpdateEvent?.Invoke(this, _playerEntity);
         }
     }
 
@@ -58,6 +62,7 @@ public class PlayerDetails(
         {
             _playerEntity.Motto = value;
             _storageQueue.Add(_playerEntity);
+            PlayerDetailsUpdateEvent?.Invoke(this, _playerEntity);
         }
     }
 
@@ -68,6 +73,7 @@ public class PlayerDetails(
         {
             _playerEntity.Figure = value;
             _storageQueue.Add(_playerEntity);
+            PlayerDetailsUpdateEvent?.Invoke(this, _playerEntity);
         }
     }
 
@@ -78,6 +84,7 @@ public class PlayerDetails(
         {
             _playerEntity.Gender = value;
             _storageQueue.Add(_playerEntity);
+            PlayerDetailsUpdateEvent?.Invoke(this, _playerEntity);
         }
     }
 
@@ -88,6 +95,7 @@ public class PlayerDetails(
         {
             _playerEntity.PlayerStatus = value;
             _storageQueue.Add(_playerEntity);
+            StatusUpdateEvent?.Invoke(this, value);
         }
     }
 

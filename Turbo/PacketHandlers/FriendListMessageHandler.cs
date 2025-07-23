@@ -42,21 +42,13 @@ public class FriendListMessageHandler(
         if (session.Player == null || message.Friends == null || message.Friends.Count == 0)
             return;
 
-        foreach (var friendId in message.Friends)
-        {
-            if (!session.Player.Messenger.HasReceivedRequestFrom(friendId))
-                continue;
-
-            var (playerMessengerFriend, friendMessengerFriend) = await session.Player.Messenger.AcceptFriend(friendId);
-        }
+        await session.Player.Messenger.AcceptFriendRequests(message.Friends);
     }
 
     private void OnDeclineFriendMessage(DeclineFriendMessage message, ISession session)
     {
         if (session.Player == null)
             return;
-
-        throw new NotImplementedException();
 
         //if(message.DeclineAll)
         //{
@@ -74,18 +66,19 @@ public class FriendListMessageHandler(
 
         if (message.PlayerId <= 0)
             return;
-
-        throw new NotImplementedException();
     }
 
     private void OnFindNewFriendMessage(FindNewFriendsMessage message, ISession session) => throw new NotImplementedException();
 
     private void OnFriendListUpdateMessage(FriendListUpdateEventMessage message, ISession session)
     {
-        if (session.Player == null)
+        if (session.Player == null || !session.Player.IsInitialized)
             return;
 
-        // Send the friend list updates
+        session.Send(new FriendListUpdateMessage
+        {
+            FriendListUpdate = session.Player.Messenger.MessengerFriendsManager.GetFriendListUpdates()
+        });
     }
 
     private void OnGetFriendRequestsMessage(GetFriendRequestsMessage message, ISession session)
@@ -95,7 +88,7 @@ public class FriendListMessageHandler(
 
         session.Send(new FriendRequestsMessage
         {
-            Requests = session.Player.Messenger.GetPendingRequests()
+            Requests = session.Player.Messenger.PendingRequests
         });
     }
 
@@ -113,7 +106,7 @@ public class FriendListMessageHandler(
 
     private void OnMessengerInitMessage(MessengerInitEventMessage message, ISession session)
     {
-        if (session.Player == null) return;
+        if (session.Player == null || !session.Player.IsInitialized) return;
 
         session.Send(new MessengerInitMessage
         {
@@ -123,24 +116,20 @@ public class FriendListMessageHandler(
             //Missing categories, not implemented yet
         });
 
-        //session.Send(new FriendListFragmentMessage());
+        session.Send(new FriendListFragmentMessage
+        {
+            FriendListFragments = session.Player.Messenger.MessengerFriendsManager.GetFriendsFragments(100)
+        });
     }
 
-    private void OnRemoveFriendMessage(RemoveFriendMessage message, ISession session)
+    private async Task OnRemoveFriendMessage(RemoveFriendMessage message, ISession session)
     {
         if (session.Player == null) return;
 
         if (message.FriendIds == null || message.FriendIds.Count == 0)
             return;
 
-        throw new NotImplementedException();
-
-        //foreach (var friendId in message.FriendIds)
-        //{
-        //    // Find the friend by ID
-        //    // If Friend does not exist, skip
-        //    // Remove the friend from the list
-        //}
+        await session.Player.Messenger.DeleteFriends(message.FriendIds);
     }
 
     private async Task OnRequestFriendMessage(RequestFriendMessage message, ISession session)

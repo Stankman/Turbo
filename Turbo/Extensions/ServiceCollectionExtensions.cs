@@ -150,6 +150,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMessengerFactory, MessengerFactory>();
         services.AddSingleton<IMessengerFriendsFactory, MessengerFriendsFactory>();
         services.AddSingleton<IMessengerRequestsFactory, MessengerRequestsFactory>();
+        services.AddSingleton<IMessengerEventsFactory, MessengerEventsFactory>();
     }
 
     public static void AddRepositories(this IServiceCollection services)

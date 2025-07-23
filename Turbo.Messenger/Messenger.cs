@@ -5,7 +5,6 @@ using Turbo.Core.Game.Messenger.Friends;
 using Turbo.Core.Game.Messenger.Requests;
 using Turbo.Core.Game.Players;
 using Turbo.Core.Game.Players.Constants;
-using Turbo.Core.Packets.Messages;
 using Turbo.Core.Utilities;
 
 namespace Turbo.Messenger;
@@ -15,10 +14,16 @@ public class Messenger : Component, IMessenger
     public ILogger<IMessenger> Logger { get; }
     public IMessengerManager MessengerManager { get; }
     public IPlayerManager PlayerManager { get; }
-    public IPlayer Player { get; }
+    private IPlayer Player { get; }
     public int Id => Player.Id;
-    public IMessengerFriendsManager MessengerFriendsManager { get; }
+    public IMessengerFriendManager MessengerFriendsManager { get; }
     public IMessengerRequestsManager MessengerRequestsManager { get; }
+    public IMessengerEvents MessengerEvents { get; }
+    public List<IMessengerRequest> PendingRequests => MessengerRequestsManager.Requests.ToList();
+    public List<IMessengerFriend> Friends => MessengerFriendsManager.Friends.ToList();
+
+    public event EventHandler? AddedNewFriendsEvent;
+    public event EventHandler<List<int>>? RemovedFriendsEvent;
 
     public Messenger(
         ILogger<IMessenger> _logger,
@@ -26,7 +31,8 @@ public class Messenger : Component, IMessenger
         IPlayerManager _playerManager,
         IPlayer _player,
         IMessengerFriendsFactory _messengerFriendsFactory,
-        IMessengerRequestsFactory _messengerRequestsFactory)
+        IMessengerRequestsFactory _messengerRequestsFactory,
+        IMessengerEventsFactory _messengerEventsFactory)
     {
         Logger = _logger;
         MessengerManager = _messengerManager;
@@ -34,6 +40,7 @@ public class Messenger : Component, IMessenger
         Player = _player;
         MessengerFriendsManager = _messengerFriendsFactory.Create(this);
         MessengerRequestsManager = _messengerRequestsFactory.Create(this);
+        MessengerEvents = _messengerEventsFactory.Create(Player);
     }
 
     protected override async Task OnInit()
@@ -42,10 +49,13 @@ public class Messenger : Component, IMessenger
         {
             await Task.WhenAll(
                 MessengerFriendsManager.InitAsync().AsTask(),
-                MessengerRequestsManager.InitAsync().AsTask()
+                MessengerRequestsManager.InitAsync().AsTask(),
+                MessengerEvents.InitAsync().AsTask()
             );
 
             MessengerManager.AddMessenger(this);
+
+            await MessengerEvents.OnPlayerStatusUpdateEvent(Player, Player.Status);
         }
         catch (Exception ex)
         {
@@ -59,15 +69,10 @@ public class Messenger : Component, IMessenger
             .Any(request => request.TargetPlayerEntityId == targetPlayerId);
     }
 
-    public bool HasReceivedRequestFrom(int senderPlayerId)
+    public bool HasPendingFriendRequestFrom(int senderPlayerId)
     {
         return MessengerRequestsManager.Requests
             .Any(request => request.PlayerEntityId == senderPlayerId);
-    }
-
-    public List<IMessengerRequest> GetPendingRequests()
-    {
-        return MessengerRequestsManager.Requests.ToList();
     }
 
     public async Task<IMessengerRequest?> SendFriendRequest(IPlayer targetPlayer)
@@ -75,48 +80,80 @@ public class Messenger : Component, IMessenger
         if (HasSentRequestTo(targetPlayer.Id))
             return null;
 
-        if (HasReceivedRequestFrom(targetPlayer.Id))
+        if (HasPendingFriendRequestFrom(targetPlayer.Id))
             return null;
 
         return await MessengerRequestsManager.CreateFriendRequestAsync(targetPlayer);
     }
 
-    public async Task<(IMessengerFriend? playerMessengerFriend, IMessengerFriend? friendMessengerFriend)> AcceptFriend(int playerId)
+    public async Task AcceptFriendRequests(List<int> playerIds)
     {
-        var request = await MessengerRequestsManager.GetFriendRequestAsync(playerId);
-
-        if (request == null)
+        foreach(var playerId in playerIds)
         {
-            Logger.LogWarning("No friend request found from player {PlayerId}", playerId);
-            return (null, null);
-        }
+            if (!HasPendingFriendRequestFrom(playerId)) continue;
 
-        var requestedByPlayer = PlayerManager.GetPlayerById(request.PlayerEntityId);
+            var request = await MessengerRequestsManager.GetFriendRequestAsync(playerId);
 
-        if (requestedByPlayer == null)
-        {
+            if (request == null) continue;
+
+            var requestedByPlayer = await PlayerManager.GetOfflinePlayerById(request.PlayerEntityId);
+
+            if (requestedByPlayer == null)
+            {
+                await MessengerRequestsManager.DeleteFriendRequestAsync(playerId);
+                continue;
+            }
+
+            var (playerMessengerFriend, friendMessengerFriend) = await MessengerFriendsManager.AddMutualFriendsAsync(requestedByPlayer);
+
             await MessengerRequestsManager.DeleteFriendRequestAsync(playerId);
-            return (null, null);
         }
 
-        var (playerMessengerFriend, friendMessengerFriend) = await MessengerFriendsManager.AddMutualFriendsAsync(requestedByPlayer);
-
-        await MessengerRequestsManager.DeleteFriendRequestAsync(playerId);
-
-        return (playerMessengerFriend, friendMessengerFriend);
+        AddedNewFriendsEvent?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task DeclineFriend(int playerId)
+    public async Task DeleteFriends(List<int> friendIds)
     {
-        var request = await MessengerRequestsManager.GetFriendRequestAsync(playerId);
+        List<int> removedFriendsIds = new List<int>();
 
-        if (request == null)
+        foreach (var friendId in friendIds)
         {
-            Logger.LogWarning("No friend request found from player {PlayerId}", playerId);
-            return;
+            if (!IsFriendWith(friendId)) continue;
+
+            var friend = MessengerFriendsManager.GetFriendById(friendId);
+
+            if (friend == null) continue;
+
+            await MessengerFriendsManager.DeleteFriendAsync(friendId);
+
+            removedFriendsIds.Add(friendId);
         }
 
-        await MessengerRequestsManager.DeleteFriendRequestAsync(playerId);
+        RemovedFriendsEvent?.Invoke(this, removedFriendsIds);
+    }
+
+    public async Task DeclineFriendRequests(List<int> friendIds)
+    {
+        foreach(var playerId in friendIds)
+        {
+            if (!HasPendingFriendRequestFrom(playerId)) continue;
+
+            var request = await MessengerRequestsManager.GetFriendRequestAsync(playerId);
+
+            if (request == null) continue;
+
+            var requestedByPlayer = await PlayerManager.GetOfflinePlayerById(request.PlayerEntityId);
+
+            if (requestedByPlayer == null)
+            {
+                await MessengerRequestsManager.DeleteFriendRequestAsync(playerId);
+                continue;
+            }
+
+            await MessengerRequestsManager.DeleteFriendRequestAsync(playerId);
+
+            //Invoke event for request declined
+        }
     }
 
     public async Task DeclineAll()
@@ -124,25 +161,18 @@ public class Messenger : Component, IMessenger
         await MessengerRequestsManager.ClearFriendRequestsAsync();
     }
 
-    public bool IsFriendWith(int playerId) => MessengerFriendsManager.Friends.Any(f => f.FriendPlayerEntityId == playerId);
+    public bool IsFriendWith(int playerId) => MessengerFriendsManager.Friends.Any(f => f.Id == playerId);
 
-    public bool HasPendingFriendRequestFrom(int playerId) => HasReceivedRequestFrom(playerId);
-
-    public async Task SendComposer(IComposer composer)
+    public IMessengerFriend? GetFriendById(int friendPlayerId)
     {
-        var tasks = MessengerFriendsManager.Friends
-            .Where(f => f.Friend.Status == PlayerStatusEnum.Online)
-            .Select(f => f.Friend.Session.Send(composer));
-
-        await Task.WhenAll(tasks);
+        return MessengerFriendsManager.GetFriendById(friendPlayerId);
     }
 
     protected override async Task OnDispose()
     {
         try
         {
-            // Notify all friends that this player is going offline
-
+            await MessengerEvents.DisposeAsync();
             await MessengerFriendsManager.DisposeAsync();
             await MessengerRequestsManager.DisposeAsync();
         }

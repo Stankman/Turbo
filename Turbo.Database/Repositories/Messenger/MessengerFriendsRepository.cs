@@ -38,7 +38,11 @@ public class MessengerFriendsRepository(IEmulatorContext _context) : IMessengerF
 
         if (playerSide == null)
         {
-            playerSide = new MessengerFriendEntity { PlayerId = playerId, FriendPlayerId = friendPlayerId };
+            playerSide = new MessengerFriendEntity { 
+                PlayerId = playerId, 
+                FriendPlayerId = friendPlayerId
+            };
+            
             _context.MessengerFriends.Add(playerSide);
         }
 
@@ -49,6 +53,14 @@ public class MessengerFriendsRepository(IEmulatorContext _context) : IMessengerF
         }
 
         await _context.SaveChangesAsync();
+
+        playerSide = await _context.MessengerFriends
+            .Include(f => f.FriendPlayerEntity)
+            .FirstOrDefaultAsync(f => f.Id == playerSide.Id);
+
+        friendSide = await _context.MessengerFriends
+            .Include(f => f.FriendPlayerEntity)
+            .FirstOrDefaultAsync(f => f.Id == friendSide.Id);
 
         return (playerSide, friendSide);
     }

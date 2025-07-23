@@ -6,6 +6,8 @@ namespace Turbo.Messenger.Friends;
 public class MessengerFriendUpdate : IMessengerFriendUpdate
 {
     public int FriendId { get; set; }
-    public IMessengerFriend? FriendData { get; set; }
+    public IMessengerFriendData? FriendData { get; set; }
+    public int CategoryId { get; set; }
+    public MessengerFriendRelationEnum RelationType { get; set; }
     public FriendListUpdateActionEnum UpdateType { get; set; }
 }

@@ -7,6 +7,6 @@ namespace Turbo.Core.Database.Factories.Messenger;
 
 public interface IMessengerFriendsFactory
 {
-    public IMessengerFriendsManager Create(IMessenger messenger);
-    public IMessengerFriend CreateMessengerFriend(MessengerFriendEntity messengerFriendEntity, IPlayer friendPlayer);
+    public IMessengerFriendManager Create(IMessenger messenger);
+    public IMessengerFriend CreateMessengerFriend(MessengerFriendEntity messengerFriendEntity);
 }

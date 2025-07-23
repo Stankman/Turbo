@@ -126,6 +126,7 @@ public class Player(
     public string Figure => PlayerDetails.Figure;
 
     public AvatarGender Gender => PlayerDetails.Gender;
+
     public PlayerStatusEnum Status => PlayerDetails.PlayerStatus;
 
     protected override async Task OnInit()

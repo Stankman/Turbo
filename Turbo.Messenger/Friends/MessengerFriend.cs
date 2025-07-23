@@ -8,11 +8,10 @@ namespace Turbo.Messenger.Friends;
 
 public class MessengerFriend(
     MessengerFriendEntity _entity,
-    IPlayer _friendPlayer) : IMessengerFriend
+    IMessengerFriendData _messengerFriendData) : IMessengerFriend
 {
-    public int PlayerEntityId { get; } = _entity.PlayerId;
-    public int FriendPlayerEntityId { get; } = _entity.FriendPlayerId;
-    public IPlayer Friend { get; } = _friendPlayer;
+    public int Id { get; } = _entity.FriendPlayerId;
+    public IMessengerFriendData Friend { get; set; } = _messengerFriendData;
     public int? MessengerCategoryEntityId { get; } = _entity.MessengerCategoryEntityId;
     public MessengerFriendRelationEnum RelationType { get; } = _entity.RelationType;
 }
